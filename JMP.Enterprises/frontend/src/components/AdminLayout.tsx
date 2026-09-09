@@ -62,7 +62,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
         <div className="sidebar-header" style={{ padding: '20px 16px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <div className="brand-logo-wrapper" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', width: '100%' }} onClick={() => onModuleChange('home')}>
             <img 
-              src="/logo.png" 
+              src="/logo_white.png" 
               alt="JMP Enterprises" 
               style={{ height: '70px', maxHeight: '75px', width: 'auto', objectFit: 'contain' }}
               onError={(e) => {
