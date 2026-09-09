@@ -110,7 +110,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         <div style={{ padding: '36px 32px' }}>
           <div style={{ marginBottom: '24px', textAlign: 'center' }}>
             <img
-              src="/logo.png"
+              src="/logo_black.png"
               alt="JMP Enterprises Logo"
               style={{ 
                 height: '110px', 
@@ -118,8 +118,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 width: 'auto', 
                 objectFit: 'contain', 
                 margin: '0 auto 16px', 
-                display: 'block',
-                filter: 'brightness(0.15)'
+                display: 'block'
               }}
               onError={(e) => {
                 (e.target as HTMLElement).style.display = 'none';
