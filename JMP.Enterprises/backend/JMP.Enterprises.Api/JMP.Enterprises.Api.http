@@ -1,0 +1,6 @@
+@JMP.Enterprises.Api_HostAddress = http://localhost:5184
+
+GET {{JMP.Enterprises.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
