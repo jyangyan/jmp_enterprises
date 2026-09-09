@@ -247,7 +247,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
             {/* Header */}
             <div style={{ textAlign: 'center', marginBottom: '28px', borderBottom: '2px solid #e2e8f0', paddingBottom: '20px' }}>
               <img
-                src="/logo_black.png"
+                src="/logo.png"
                 alt="JMP Logo"
                 style={{ height: '60px', width: 'auto', objectFit: 'contain', margin: '0 auto 10px', display: 'block' }}
                 onError={(e) => {

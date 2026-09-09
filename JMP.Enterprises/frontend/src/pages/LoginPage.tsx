@@ -110,7 +110,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         <div style={{ padding: '36px 32px' }}>
           <div style={{ marginBottom: '24px', textAlign: 'center' }}>
             <img
-              src="/logo_black.png"
+              src="/logo.png"
               alt="JMP Enterprises Logo"
               style={{ 
                 height: '110px', 
