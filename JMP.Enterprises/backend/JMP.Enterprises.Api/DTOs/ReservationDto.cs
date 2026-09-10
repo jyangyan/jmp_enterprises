@@ -25,6 +25,8 @@ public class ReservationDto
     public decimal AgreedRentalAmount { get; set; }
     public decimal SecurityDeposit { get; set; }
     public decimal ReservationFee { get; set; }
+    public string? ReservationFeePaymentMethod { get; set; } = "Cash";
+    public string? ReservationFeeReferenceNumber { get; set; }
 
     public string ReservationStatus { get; set; } = "Confirmed";
     public string? Notes { get; set; }
@@ -46,6 +48,8 @@ public class CreateReservationDto
     public decimal AgreedRentalAmount { get; set; }
     public decimal SecurityDeposit { get; set; } = 0;
     public decimal ReservationFee { get; set; } = 0;
+    public string? ReservationFeePaymentMethod { get; set; } = "Cash";
+    public string? ReservationFeeReferenceNumber { get; set; }
     public string ReservationStatus { get; set; } = "Confirmed";
     public string? Notes { get; set; }
 }
@@ -63,6 +67,8 @@ public class UpdateReservationDto
     public decimal AgreedRentalAmount { get; set; }
     public decimal SecurityDeposit { get; set; }
     public decimal ReservationFee { get; set; }
+    public string? ReservationFeePaymentMethod { get; set; } = "Cash";
+    public string? ReservationFeeReferenceNumber { get; set; }
     public string ReservationStatus { get; set; } = "Confirmed";
     public string? Notes { get; set; }
 }

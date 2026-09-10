@@ -243,6 +243,13 @@ public class ApplicationDbContext : DbContext
                 .HasColumnType("decimal(18,2)")
                 .HasDefaultValue(0);
 
+            entity.Property(r => r.ReservationFeePaymentMethod)
+                .HasMaxLength(50)
+                .HasDefaultValue("Cash");
+
+            entity.Property(r => r.ReservationFeeReferenceNumber)
+                .HasMaxLength(100);
+
             entity.Property(r => r.ReservationStatus)
                 .IsRequired()
                 .HasMaxLength(30);

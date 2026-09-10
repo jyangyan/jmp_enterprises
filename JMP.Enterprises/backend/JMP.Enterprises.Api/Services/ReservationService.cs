@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using JMP.Enterprises.Api.Data;
 using JMP.Enterprises.Api.DTOs;
+using JMP.Enterprises.Api.Dtos;
 using JMP.Enterprises.Api.Models;
 
 namespace JMP.Enterprises.Api.Services;
@@ -8,10 +9,12 @@ namespace JMP.Enterprises.Api.Services;
 public class ReservationService
 {
     private readonly ApplicationDbContext _context;
+    private readonly IReceiptService _receiptService;
 
-    public ReservationService(ApplicationDbContext context)
+    public ReservationService(ApplicationDbContext context, IReceiptService receiptService)
     {
         _context = context;
+        _receiptService = receiptService;
     }
 
     public async Task<IEnumerable<ReservationDto>> GetAllReservationsAsync(
@@ -105,6 +108,9 @@ public class ReservationService
             throw new InvalidOperationException($"{propertyName} is already reserved for the selected dates.");
         }
 
+        string paymentMethod = string.IsNullOrWhiteSpace(dto.ReservationFeePaymentMethod) ? "Cash" : dto.ReservationFeePaymentMethod.Trim();
+        string? referenceNumber = string.IsNullOrWhiteSpace(dto.ReservationFeeReferenceNumber) ? null : dto.ReservationFeeReferenceNumber.Trim();
+
         var reservation = new Reservation
         {
             PropertyId = dto.PropertyId,
@@ -118,6 +124,8 @@ public class ReservationService
             AgreedRentalAmount = dto.AgreedRentalAmount,
             SecurityDeposit = dto.SecurityDeposit,
             ReservationFee = dto.ReservationFee,
+            ReservationFeePaymentMethod = paymentMethod,
+            ReservationFeeReferenceNumber = referenceNumber,
             ReservationStatus = dto.ReservationStatus,
             Notes = dto.Notes,
             CreatedDate = DateTime.Now
@@ -125,6 +133,42 @@ public class ReservationService
 
         _context.Reservations.Add(reservation);
         await _context.SaveChangesAsync();
+
+        // If a reservation fee is paid (> 0), automatically record Payment and generate Acknowledgement Receipt
+        if (dto.ReservationFee > 0)
+        {
+            var property = await _context.Properties.FindAsync(dto.PropertyId);
+            string propName = property?.PropertyName ?? "Rental Unit";
+
+            var payment = new Payment
+            {
+                PropertyId = reservation.PropertyId,
+                ReservationId = reservation.ReservationId,
+                Amount = dto.ReservationFee,
+                PaymentType = "Reservation Fee",
+                PaymentMethod = paymentMethod,
+                ReferenceNumber = referenceNumber,
+                PaymentDate = DateTime.Now,
+                Notes = $"Reservation fee for {propName}{(referenceNumber != null ? $" (Ref: {referenceNumber})" : "")}",
+                CreatedDate = DateTime.Now
+            };
+
+            _context.Payments.Add(payment);
+            await _context.SaveChangesAsync();
+
+            await _receiptService.CreateReceiptAsync(new CreateReceiptDto
+            {
+                ReceiptType = "Reservation",
+                ReservationId = reservation.ReservationId,
+                PaymentId = payment.PaymentId,
+                Amount = dto.ReservationFee,
+                PaymentType = "Reservation Fee",
+                PaymentMethod = paymentMethod,
+                ReferenceNumber = referenceNumber,
+                Purpose = $"Reservation Fee – {propName}",
+                Notes = "Reservation fee is deductible from the total rental amount."
+            });
+        }
 
         return (await GetReservationByIdAsync(reservation.ReservationId))!;
     }
@@ -150,6 +194,9 @@ public class ReservationService
             throw new InvalidOperationException($"{propertyName} is already reserved for the selected dates.");
         }
 
+        string paymentMethod = string.IsNullOrWhiteSpace(dto.ReservationFeePaymentMethod) ? "Cash" : dto.ReservationFeePaymentMethod.Trim();
+        string? referenceNumber = string.IsNullOrWhiteSpace(dto.ReservationFeeReferenceNumber) ? null : dto.ReservationFeeReferenceNumber.Trim();
+
         reservation.PropertyId = dto.PropertyId;
         reservation.GuestId = dto.GuestId;
         reservation.RentalType = dto.RentalType;
@@ -161,9 +208,66 @@ public class ReservationService
         reservation.AgreedRentalAmount = dto.AgreedRentalAmount;
         reservation.SecurityDeposit = dto.SecurityDeposit;
         reservation.ReservationFee = dto.ReservationFee;
+        reservation.ReservationFeePaymentMethod = paymentMethod;
+        reservation.ReservationFeeReferenceNumber = referenceNumber;
         reservation.ReservationStatus = dto.ReservationStatus;
         reservation.Notes = dto.Notes;
         reservation.UpdatedDate = DateTime.Now;
+
+        // Sync or create corresponding Payment and Receipt
+        var existingFeePayment = await _context.Payments
+            .FirstOrDefaultAsync(p => p.ReservationId == id && p.PaymentType == "Reservation Fee");
+
+        if (existingFeePayment != null)
+        {
+            existingFeePayment.Amount = dto.ReservationFee;
+            existingFeePayment.PaymentMethod = paymentMethod;
+            existingFeePayment.ReferenceNumber = referenceNumber;
+            existingFeePayment.PropertyId = dto.PropertyId;
+
+            var existingReceipt = await _context.Receipts
+                .FirstOrDefaultAsync(r => r.PaymentId == existingFeePayment.PaymentId || (r.ReservationId == id && r.PaymentType == "Reservation Fee"));
+            if (existingReceipt != null)
+            {
+                existingReceipt.Amount = dto.ReservationFee;
+                existingReceipt.PaymentMethod = paymentMethod;
+                existingReceipt.ReferenceNumber = referenceNumber;
+            }
+        }
+        else if (dto.ReservationFee > 0)
+        {
+            var property = await _context.Properties.FindAsync(dto.PropertyId);
+            string propName = property?.PropertyName ?? "Rental Unit";
+
+            var payment = new Payment
+            {
+                PropertyId = reservation.PropertyId,
+                ReservationId = reservation.ReservationId,
+                Amount = dto.ReservationFee,
+                PaymentType = "Reservation Fee",
+                PaymentMethod = paymentMethod,
+                ReferenceNumber = referenceNumber,
+                PaymentDate = DateTime.Now,
+                Notes = $"Reservation fee for {propName}{(referenceNumber != null ? $" (Ref: {referenceNumber})" : "")}",
+                CreatedDate = DateTime.Now
+            };
+
+            _context.Payments.Add(payment);
+            await _context.SaveChangesAsync();
+
+            await _receiptService.CreateReceiptAsync(new CreateReceiptDto
+            {
+                ReceiptType = "Reservation",
+                ReservationId = reservation.ReservationId,
+                PaymentId = payment.PaymentId,
+                Amount = dto.ReservationFee,
+                PaymentType = "Reservation Fee",
+                PaymentMethod = paymentMethod,
+                ReferenceNumber = referenceNumber,
+                Purpose = $"Reservation Fee – {propName}",
+                Notes = "Reservation fee is deductible from the total rental amount."
+            });
+        }
 
         await _context.SaveChangesAsync();
         return await GetReservationByIdAsync(id);
@@ -246,6 +350,8 @@ public class ReservationService
             AgreedRentalAmount = r.AgreedRentalAmount,
             SecurityDeposit = r.SecurityDeposit,
             ReservationFee = r.ReservationFee,
+            ReservationFeePaymentMethod = r.ReservationFeePaymentMethod ?? "Cash",
+            ReservationFeeReferenceNumber = r.ReservationFeeReferenceNumber,
             ReservationStatus = r.ReservationStatus,
             Notes = r.Notes,
             CreatedDate = r.CreatedDate,

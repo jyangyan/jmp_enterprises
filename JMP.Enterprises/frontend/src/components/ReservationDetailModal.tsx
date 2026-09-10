@@ -119,13 +119,19 @@ export const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
     try {
       let amount = reservation.reservationFee || 0;
       let paymentType = 'Reservation Fee';
+      let paymentMethod = reservation.reservationFeePaymentMethod || 'Cash';
+      let referenceNumber = reservation.reservationFeeReferenceNumber || undefined;
 
       if (type === 'SecurityDeposit') {
         amount = reservation.securityDeposit || 0;
         paymentType = 'Security Deposit';
+        paymentMethod = 'Cash';
+        referenceNumber = undefined;
       } else if (type === 'Rent') {
         amount = reservation.agreedRentalAmount || 0;
         paymentType = 'Rent Payment';
+        paymentMethod = 'Cash';
+        referenceNumber = undefined;
       }
 
       const receipt = await receiptApi.createReceipt({
@@ -133,7 +139,8 @@ export const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
         reservationId: reservation.reservationId,
         amount: amount > 0 ? amount : undefined,
         paymentType: paymentType,
-        paymentMethod: 'Cash',
+        paymentMethod: paymentMethod,
+        referenceNumber: referenceNumber,
         purpose: `${paymentType} – ${reservation.propertyName}`,
       });
 
@@ -271,8 +278,16 @@ export const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
                 <span style={{ fontWeight: 600 }}>{formatPesos(reservation.securityDeposit)}</span>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f1f5f9', fontSize: '0.875rem' }}>
-                <span>Reservation Fee:</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid #f1f5f9', fontSize: '0.875rem' }}>
+                <div>
+                  <span>Reservation Fee:</span>
+                  {reservation.reservationFee > 0 && (
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                      Method: <strong>{reservation.reservationFeePaymentMethod || 'Cash'}</strong>
+                      {reservation.reservationFeeReferenceNumber ? ` (Ref: ${reservation.reservationFeeReferenceNumber})` : ''}
+                    </div>
+                  )}
+                </div>
                 <span style={{ fontWeight: 600 }}>{formatPesos(reservation.reservationFee)}</span>
               </div>
 

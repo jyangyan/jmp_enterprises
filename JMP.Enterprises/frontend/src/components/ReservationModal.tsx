@@ -53,6 +53,8 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
     agreedRentalAmount: 0,
     securityDeposit: 0,
     reservationFee: 0,
+    reservationFeePaymentMethod: 'Cash',
+    reservationFeeReferenceNumber: '',
     reservationStatus: 'Confirmed',
     notes: '',
   });
@@ -94,6 +96,8 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
           agreedRentalAmount: initialData.agreedRentalAmount || 0,
           securityDeposit: initialData.securityDeposit || 0,
           reservationFee: initialData.reservationFee || 0,
+          reservationFeePaymentMethod: initialData.reservationFeePaymentMethod || 'Cash',
+          reservationFeeReferenceNumber: initialData.reservationFeeReferenceNumber || '',
           reservationStatus: status,
           notes: initialData.notes || '',
         });
@@ -121,6 +125,8 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
           agreedRentalAmount: dailyRate * diffTime,
           securityDeposit: 0,
           reservationFee: 0,
+          reservationFeePaymentMethod: 'Cash',
+          reservationFeeReferenceNumber: '',
           reservationStatus: 'Confirmed',
           notes: '',
         });
@@ -644,6 +650,68 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
                     onChange={(e) => setFormData({ ...formData, reservationFee: parseFloat(e.target.value) || 0 })}
                   />
                 </div>
+
+                {formData.reservationFee > 0 && (
+                  <div
+                    className="full-width"
+                    style={{
+                      background: '#f0fdf4',
+                      border: '1px solid #86efac',
+                      borderRadius: '8px',
+                      padding: '12px 14px',
+                      marginTop: '4px',
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                      gap: '12px',
+                      alignItems: 'flex-start',
+                    }}
+                  >
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label style={{ color: '#166534', fontWeight: 600, fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        Fee Payment Method *
+                      </label>
+                      <select
+                        className="form-control"
+                        value={formData.reservationFeePaymentMethod || 'Cash'}
+                        onChange={(e) => setFormData({ ...formData, reservationFeePaymentMethod: e.target.value })}
+                        style={{ background: '#fff', borderColor: '#86efac' }}
+                      >
+                        <option value="Cash">Cash</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="GCash">GCash</option>
+                        <option value="Check">Check</option>
+                        <option value="Credit Card">Credit Card</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label style={{ color: '#166534', fontWeight: 600, fontSize: '0.82rem' }}>
+                        Reference # / Txn # {formData.reservationFeePaymentMethod !== 'Cash' ? '*' : '(Optional)'}
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder={
+                          formData.reservationFeePaymentMethod === 'Bank Transfer'
+                            ? 'e.g. BDO Ref / Txn #'
+                            : formData.reservationFeePaymentMethod === 'GCash'
+                            ? 'e.g. GCash Ref (13 digits)'
+                            : formData.reservationFeePaymentMethod === 'Check'
+                            ? 'e.g. Check #'
+                            : 'e.g. Transaction Ref #'
+                        }
+                        value={formData.reservationFeeReferenceNumber || ''}
+                        onChange={(e) => setFormData({ ...formData, reservationFeeReferenceNumber: e.target.value })}
+                        style={{ background: '#fff', borderColor: '#86efac' }}
+                      />
+                    </div>
+
+                    <div style={{ gridColumn: '1 / -1', fontSize: '0.76rem', color: '#15803d', background: '#dcfce7', padding: '6px 10px', borderRadius: '6px', border: '1px solid #bbf7d0' }}>
+                      ✓ An official Acknowledgement Receipt will record this reservation fee as <strong>{formData.reservationFeePaymentMethod || 'Cash'}</strong> {formData.reservationFeeReferenceNumber ? `(Ref: ${formData.reservationFeeReferenceNumber})` : ''}.
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

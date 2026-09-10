@@ -17,6 +17,8 @@ export interface Reservation {
   agreedRentalAmount: number;
   securityDeposit: number;
   reservationFee: number;
+  reservationFeePaymentMethod?: string;
+  reservationFeeReferenceNumber?: string | null;
   reservationStatus: string; // 'Inquiry' | 'Reserved' | 'Confirmed' | 'CheckedIn' | 'CheckedOut' | 'Cancelled'
   notes?: string | null;
   createdDate: string;
@@ -35,6 +37,8 @@ export interface CreateReservationDto {
   agreedRentalAmount: number;
   securityDeposit: number;
   reservationFee: number;
+  reservationFeePaymentMethod?: string;
+  reservationFeeReferenceNumber?: string | null;
   reservationStatus: string;
   notes?: string;
 }
@@ -51,6 +55,8 @@ export interface UpdateReservationDto {
   agreedRentalAmount: number;
   securityDeposit: number;
   reservationFee: number;
+  reservationFeePaymentMethod?: string;
+  reservationFeeReferenceNumber?: string | null;
   reservationStatus: string;
   notes?: string;
 }

@@ -38,6 +38,10 @@ public class Reservation
 
     public decimal ReservationFee { get; set; } = 0;
 
+    public string? ReservationFeePaymentMethod { get; set; } = "Cash";
+
+    public string? ReservationFeeReferenceNumber { get; set; }
+
     /// <summary>
     /// Inquiry | Reserved | Confirmed | CheckedIn | CheckedOut | Cancelled
     /// </summary>
