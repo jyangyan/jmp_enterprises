@@ -178,20 +178,31 @@ public class ReceiptService : IReceiptService
             return MapToDto(existingReceipt, reservation);
         }
 
-        // 1. Record immediate payment if provided at checkout
+        // 1. Record payment if provided at checkout, or auto-record checkout settlement payment if no prior payment exists
+        var existingPayments = await _context.Payments
+            .Where(p => p.ReservationId == dto.ReservationId)
+            .ToListAsync();
+
         Payment? newPayment = null;
-        if (dto.PaymentAmount > 0)
+        decimal amountToRecord = dto.PaymentAmount;
+
+        if (amountToRecord == 0 && existingPayments.Count == 0 && reservation.AgreedRentalAmount > 0)
+        {
+            amountToRecord = reservation.AgreedRentalAmount + dto.AdditionalCharges;
+        }
+
+        if (amountToRecord > 0)
         {
             newPayment = new Payment
             {
                 ReservationId = reservation.ReservationId,
                 PropertyId = reservation.PropertyId,
                 PaymentDate = DateTime.Now,
-                Amount = dto.PaymentAmount,
-                PaymentType = string.IsNullOrWhiteSpace(dto.PaymentType) ? "Rental Payment" : dto.PaymentType,
+                Amount = amountToRecord,
+                PaymentType = string.IsNullOrWhiteSpace(dto.PaymentType) ? "Checkout Settlement" : dto.PaymentType,
                 PaymentMethod = string.IsNullOrWhiteSpace(dto.PaymentMethod) ? "Cash" : dto.PaymentMethod,
                 ReferenceNumber = dto.ReferenceNumber,
-                Notes = string.IsNullOrWhiteSpace(dto.Notes) ? "Payment recorded at Checkout" : $"Checkout settlement payment: {dto.Notes}",
+                Notes = string.IsNullOrWhiteSpace(dto.Notes) ? "Payment recorded at Checkout Settlement" : $"Checkout settlement payment: {dto.Notes}",
                 CreatedDate = DateTime.Now
             };
             _context.Payments.Add(newPayment);

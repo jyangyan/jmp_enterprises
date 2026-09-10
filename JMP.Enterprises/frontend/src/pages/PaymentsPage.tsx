@@ -262,6 +262,7 @@ export const PaymentsPage: React.FC<PaymentsPageProps> = ({
               <select className="form-control" value={selectedType} onChange={(e) => setSelectedType(e.target.value)}>
                 <option value="All">All Types</option>
                 <option value="Rent">Rent</option>
+                <option value="Checkout Settlement">Checkout Settlement</option>
                 <option value="SecurityDeposit">Security Deposit</option>
                 <option value="ReservationFee">Reservation Fee</option>
                 <option value="Utility">Utility</option>
@@ -382,6 +383,8 @@ export const PaymentsPage: React.FC<PaymentsPageProps> = ({
                           background:
                             p.paymentType === 'Rent'
                               ? '#dbeafe'
+                              : p.paymentType === 'Checkout Settlement'
+                              ? '#fef3c7'
                               : p.paymentType === 'SecurityDeposit'
                               ? '#fef3c7'
                               : p.paymentType === 'ReservationFee'
@@ -390,6 +393,8 @@ export const PaymentsPage: React.FC<PaymentsPageProps> = ({
                           color:
                             p.paymentType === 'Rent'
                               ? '#1e40af'
+                              : p.paymentType === 'Checkout Settlement'
+                              ? '#b45309'
                               : p.paymentType === 'SecurityDeposit'
                               ? '#92400e'
                               : p.paymentType === 'ReservationFee'

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { X, Building2, User, Calendar, MapPin, Tag, Phone, FileText, Plus, Printer, Eye, AlertOctagon, Zap } from 'lucide-react';
+import { X, Building2, User, Calendar, MapPin, Tag, Phone, FileText, Plus, Printer, Eye, AlertOctagon, Zap, FileSpreadsheet } from 'lucide-react';
 import { Reservation } from '../types/reservation';
 import { Receipt } from '../types/receipt';
 import { RentalAgreement } from '../types/rentalAgreement';
+import { StatementOfAccount } from '../types/statementOfAccount';
 import { receiptApi } from '../api/receiptApi';
 import { rentalAgreementApi } from '../api/rentalAgreementApi';
+import { statementOfAccountApi } from '../api/statementOfAccountApi';
 import { ReceiptModal } from './ReceiptModal';
 import { CheckoutSettlementModal } from './CheckoutSettlementModal';
 import { RentalAgreementModal } from './RentalAgreementModal';
@@ -39,6 +41,10 @@ export const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
   const [isAgreementModalOpen, setIsAgreementModalOpen] = useState<boolean>(false);
   const [isSoaModalOpen, setIsSoaModalOpen] = useState<boolean>(false);
 
+  // Monthly Statements of Account (SOA) State
+  const [soas, setSoas] = useState<StatementOfAccount[]>([]);
+  const [loadingSoas, setLoadingSoas] = useState<boolean>(false);
+
   const fetchReceipts = async () => {
     if (!reservation) return;
     setLoadingReceipts(true);
@@ -65,11 +71,25 @@ export const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
     }
   };
 
+  const fetchSoas = async () => {
+    if (!reservation || reservation.rentalType !== 'LongStay') return;
+    setLoadingSoas(true);
+    try {
+      const data = await statementOfAccountApi.getByReservationId(reservation.reservationId);
+      setSoas(data);
+    } catch (err) {
+      console.error('Failed to fetch SOAs for reservation', err);
+    } finally {
+      setLoadingSoas(false);
+    }
+  };
+
   useEffect(() => {
     if (isOpen && reservation) {
       fetchReceipts();
       if (reservation.rentalType === 'LongStay') {
         fetchAgreement();
+        fetchSoas();
       }
     }
   }, [isOpen, reservation]);
@@ -335,6 +355,109 @@ export const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
                         Monthly Billing (SOA)
                       </button>
                     </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* MONTHLY STATEMENT OF ACCOUNT (SOA) BILLING HISTORY (LongStay Only) */}
+            {reservation.rentalType === 'LongStay' && (
+              <div className="card" style={{ padding: '16px', background: '#ffffff', border: '1px solid #cbd5e1' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <div style={{ fontSize: '0.85rem', textTransform: 'uppercase', color: '#0f172a', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <FileSpreadsheet size={16} style={{ color: '#7c3aed' }} />
+                    MONTHLY STATEMENT OF ACCOUNT (SOA) HISTORY
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>
+                      {soas.length} Statement(s)
+                    </span>
+                    <button
+                      className="btn btn-primary btn-sm"
+                      onClick={() => setIsSoaModalOpen(true)}
+                      style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', background: '#7c3aed', color: '#ffffff', border: 'none' }}
+                    >
+                      <Plus size={14} />
+                      Generate / Manage SOA
+                    </button>
+                  </div>
+                </div>
+
+                {loadingSoas ? (
+                  <div style={{ padding: '12px', fontSize: '0.85rem', color: '#64748b', textAlign: 'center' }}>
+                    Loading monthly statements...
+                  </div>
+                ) : soas.length === 0 ? (
+                  <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a' }}>No Monthly SOAs Issued Yet</div>
+                      <div style={{ fontSize: '0.8rem', color: '#64748b' }}>Generate utility submeter bills and monthly statements for this long-stay tenant.</div>
+                    </div>
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => setIsSoaModalOpen(true)}
+                      style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem' }}
+                    >
+                      <Plus size={14} />
+                      Issue First SOA
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ overflowX: 'auto' }}>
+                    <table className="data-table" style={{ fontSize: '0.8rem' }}>
+                      <thead>
+                        <tr>
+                          <th>SOA Number</th>
+                          <th>Billing Period</th>
+                          <th>Due Date</th>
+                          <th>Utilities</th>
+                          <th style={{ textAlign: 'right' }}>Total Amount</th>
+                          <th style={{ textAlign: 'center' }}>Status</th>
+                          <th style={{ textAlign: 'center' }}>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {soas.map((s) => (
+                          <tr key={s.statementOfAccountId}>
+                            <td style={{ fontFamily: 'monospace', fontWeight: 700, color: '#0f172a' }}>
+                              {s.soaNumber}
+                            </td>
+                            <td>{formatDate(s.billingPeriodStart)} – {formatDate(s.billingPeriodEnd)}</td>
+                            <td>{formatDate(s.dueDate)}</td>
+                            <td>
+                              <div style={{ fontSize: '0.75rem', color: '#475569' }}>
+                                ⚡ {s.electricityConsumptionKwh ? `${s.electricityConsumptionKwh} kWh` : '—'} | 💧 ₱{(s.waterAmount || 0).toLocaleString()}
+                              </div>
+                            </td>
+                            <td style={{ textAlign: 'right', fontWeight: 800, color: '#0f172a' }}>
+                              ₱{(s.totalAmountDue || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                            </td>
+                            <td style={{ textAlign: 'center' }}>
+                              <span style={{
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                                padding: '2px 8px',
+                                borderRadius: '4px',
+                                background: s.status === 'Paid' ? '#dcfce7' : s.status === 'PartiallyPaid' ? '#fef3c7' : '#fee2e2',
+                                color: s.status === 'Paid' ? '#15803d' : s.status === 'PartiallyPaid' ? '#b45309' : '#b91c1c'
+                              }}>
+                                {(s.status || 'Pending').toUpperCase()}
+                              </span>
+                            </td>
+                            <td style={{ textAlign: 'center' }}>
+                              <button
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => setIsSoaModalOpen(true)}
+                                style={{ fontSize: '0.72rem', padding: '3px 8px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                              >
+                                <Eye size={12} style={{ color: '#7c3aed' }} /> View SOA
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 )}
               </div>

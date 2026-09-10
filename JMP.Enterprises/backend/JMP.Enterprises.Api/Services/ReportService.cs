@@ -69,14 +69,14 @@ public class ReportService : IReportService
             SELECT 
                 Year, Month, YearMonth,
                 PropertyId, PropertyName, RentalType,
-                SUM(IncomeAmount) AS Revenue,
-                SUM(ExpenseAmount) AS Expenses,
-                SUM(IncomeAmount) - SUM(ExpenseAmount) AS NetProfit,
-                CASE 
+                CAST(SUM(IncomeAmount) AS decimal(18,2)) AS Revenue,
+                CAST(SUM(ExpenseAmount) AS decimal(18,2)) AS Expenses,
+                CAST(SUM(IncomeAmount) - SUM(ExpenseAmount) AS decimal(18,2)) AS NetProfit,
+                CAST(CASE 
                     WHEN SUM(IncomeAmount) > 0 THEN 
                         ((SUM(IncomeAmount) - SUM(ExpenseAmount)) / SUM(IncomeAmount)) * 100.0
                     ELSE 0.0 
-                END AS ProfitMargin
+                END AS decimal(18,2)) AS ProfitMargin
             FROM vw_rental_financial_transactions
             WHERE 1=1";
 

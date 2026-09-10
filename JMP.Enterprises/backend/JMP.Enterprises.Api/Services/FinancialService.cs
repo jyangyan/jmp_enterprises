@@ -111,20 +111,19 @@ public class FinancialService : IFinancialService
     {
         var trends = new List<MonthlyFinancialTrendDto>();
 
-        // Collect all distinct Year-Month keys
-        var months = payments.Select(p => new { p.PaymentDate.Year, p.PaymentDate.Month })
-            .Union(expenses.Select(e => new { e.ExpenseDate.Year, e.ExpenseDate.Month }))
-            .Distinct()
-            .OrderBy(m => m.Year)
-            .ThenBy(m => m.Month)
-            .ToList();
-
-        // If no records exist yet, generate current month
-        if (!months.Any())
+        // Always include at least the last 6 months rolling timeline
+        var now = DateTime.Now;
+        var monthDict = new Dictionary<(int Year, int Month), (int Year, int Month)>();
+        for (int i = 5; i >= 0; i--)
         {
-            var now = DateTime.Now;
-            months.Add(new { now.Year, now.Month });
+            var d = now.AddMonths(-i);
+            monthDict[(d.Year, d.Month)] = (d.Year, d.Month);
         }
+
+        foreach (var p in payments) monthDict[(p.PaymentDate.Year, p.PaymentDate.Month)] = (p.PaymentDate.Year, p.PaymentDate.Month);
+        foreach (var e in expenses) monthDict[(e.ExpenseDate.Year, e.ExpenseDate.Month)] = (e.ExpenseDate.Year, e.ExpenseDate.Month);
+
+        var months = monthDict.Values.OrderBy(m => m.Year).ThenBy(m => m.Month).ToList();
 
         foreach (var m in months)
         {
@@ -159,18 +158,18 @@ public class FinancialService : IFinancialService
     {
         var result = new List<PropertyMonthlyTrendDto>();
 
-        var months = payments.Select(p => new { p.PaymentDate.Year, p.PaymentDate.Month })
-            .Union(expenses.Select(e => new { e.ExpenseDate.Year, e.ExpenseDate.Month }))
-            .Distinct()
-            .OrderBy(m => m.Year)
-            .ThenBy(m => m.Month)
-            .ToList();
-
-        if (!months.Any())
+        var now = DateTime.Now;
+        var monthDict = new Dictionary<(int Year, int Month), (int Year, int Month)>();
+        for (int i = 5; i >= 0; i--)
         {
-            var now = DateTime.Now;
-            months.Add(new { now.Year, now.Month });
+            var d = now.AddMonths(-i);
+            monthDict[(d.Year, d.Month)] = (d.Year, d.Month);
         }
+
+        foreach (var p in payments) monthDict[(p.PaymentDate.Year, p.PaymentDate.Month)] = (p.PaymentDate.Year, p.PaymentDate.Month);
+        foreach (var e in expenses) monthDict[(e.ExpenseDate.Year, e.ExpenseDate.Month)] = (e.ExpenseDate.Year, e.ExpenseDate.Month);
+
+        var months = monthDict.Values.OrderBy(m => m.Year).ThenBy(m => m.Month).ToList();
 
         foreach (var prop in properties)
         {

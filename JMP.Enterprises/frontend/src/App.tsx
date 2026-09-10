@@ -133,6 +133,7 @@ export const App: React.FC = () => {
   const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
   const [isReservationDetailOpen, setIsReservationDetailOpen] = useState(false);
+  const [reservationPrefill, setReservationPrefill] = useState<{ propertyId?: number; checkInDate?: string; checkOutDate?: string } | undefined>(undefined);
 
   // Payment Modals State
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -367,8 +368,9 @@ export const App: React.FC = () => {
   };
 
   // --- Handlers: Reservation ---
-  const handleOpenCreateReservation = () => {
+  const handleOpenCreateReservation = (prefill?: { propertyId?: number; checkInDate?: string; checkOutDate?: string }) => {
     setSelectedReservation(null);
+    setReservationPrefill(prefill);
     setIsReservationModalOpen(true);
   };
 
@@ -623,6 +625,7 @@ export const App: React.FC = () => {
         ) : (
           <SystemTransactionsPage
             properties={properties}
+            reservations={reservations}
             onRefresh={fetchAllData}
             isRefreshing={loading}
           />
@@ -662,6 +665,7 @@ export const App: React.FC = () => {
         existingReservations={reservations}
         onRefreshGuests={fetchGuests}
         initialData={selectedReservation}
+        prefillData={reservationPrefill}
       />
 
       {/* Reservation Detail View Modal */}

@@ -9,7 +9,7 @@ import { ReservationCalendarView } from '../components/ReservationCalendarView';
 interface ReservationsPageProps {
   reservations: Reservation[];
   properties: Property[];
-  onOpenCreateModal: () => void;
+  onOpenCreateModal: (prefill?: { propertyId?: number; checkInDate?: string; checkOutDate?: string }) => void;
   onOpenEditModal: (reservation: Reservation) => void;
   onOpenDetailModal: (reservation: Reservation) => void;
   onCancelReservation: (reservation: Reservation) => void;
@@ -20,7 +20,6 @@ interface ReservationsPageProps {
 
 type SortField = 'checkInDate' | 'checkOutDate' | 'createdDate' | 'agreedRentalAmount' | 'guestName' | 'propertyName';
 type SortOrder = 'asc' | 'desc';
-type ViewMode = 'table' | 'calendar';
 
 export const ReservationsPage: React.FC<ReservationsPageProps> = ({
   reservations,
@@ -41,10 +40,11 @@ export const ReservationsPage: React.FC<ReservationsPageProps> = ({
     setJustRefreshed(true);
     setTimeout(() => setJustRefreshed(false), 2500);
   };
-  const [viewMode, setViewMode] = useState<ViewMode>('calendar');
+  const [showCalendar, setShowCalendar] = useState<boolean>(false);
+  const [showAvailabilityChecker, setShowAvailabilityChecker] = useState<boolean>(false);
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>('All');
   const [selectedRentalType, setSelectedRentalType] = useState<string>('All');
-  const [selectedStatus, setSelectedStatus] = useState<string>('All');
+  const [selectedStatus, setSelectedStatus] = useState<string>('Active');
   const [selectedForCheckout, setSelectedForCheckout] = useState<Reservation | null>(null);
 
   // Sorting state
@@ -64,7 +64,14 @@ export const ReservationsPage: React.FC<ReservationsPageProps> = ({
   const filteredReservations = reservations.filter((r) => {
     const matchesProperty = selectedPropertyId === 'All' || r.propertyId === parseInt(selectedPropertyId);
     const matchesType = selectedRentalType === 'All' || r.rentalType === selectedRentalType;
-    const matchesStatus = selectedStatus === 'All' || r.reservationStatus === selectedStatus;
+    const matchesStatus = 
+      selectedStatus === 'All' 
+        ? true 
+        : selectedStatus === 'Active' 
+        ? (r.reservationStatus !== 'CheckedOut' && r.reservationStatus !== 'Cancelled')
+        : selectedStatus === 'History' 
+        ? (r.reservationStatus === 'CheckedOut' || r.reservationStatus === 'Cancelled')
+        : r.reservationStatus === selectedStatus;
 
     return matchesProperty && matchesType && matchesStatus;
   });
@@ -117,13 +124,13 @@ export const ReservationsPage: React.FC<ReservationsPageProps> = ({
         flexWrap: 'wrap',
         gap: '12px'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#e2e8f0', padding: '4px', borderRadius: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <button
-            onClick={() => setViewMode('calendar')}
+            onClick={() => setShowAvailabilityChecker(!showAvailabilityChecker)}
             style={{
-              background: viewMode === 'calendar' ? '#0f172a' : 'transparent',
-              color: viewMode === 'calendar' ? '#ffffff' : '#475569',
-              border: 'none',
+              background: showAvailabilityChecker ? '#2563eb' : '#ffffff',
+              color: showAvailabilityChecker ? '#ffffff' : '#1e40af',
+              border: showAvailabilityChecker ? '1px solid #1d4ed8' : '1px solid #bfdbfe',
               padding: '8px 16px',
               borderRadius: '8px',
               fontWeight: 700,
@@ -132,18 +139,20 @@ export const ReservationsPage: React.FC<ReservationsPageProps> = ({
               alignItems: 'center',
               gap: '6px',
               cursor: 'pointer',
-              transition: 'all 0.15s ease'
+              transition: 'all 0.15s ease',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
             }}
           >
-            <CalendarIcon size={16} />
-            Calendar View (Crossed-Out Schedule)
+            <Filter size={15} />
+            {showAvailabilityChecker ? 'Hide Availability Checker' : '🔍 Check Property Availability'}
           </button>
+
           <button
-            onClick={() => setViewMode('table')}
+            onClick={() => setShowCalendar(!showCalendar)}
             style={{
-              background: viewMode === 'table' ? '#0f172a' : 'transparent',
-              color: viewMode === 'table' ? '#ffffff' : '#475569',
-              border: 'none',
+              background: showCalendar ? '#0f172a' : '#ffffff',
+              color: showCalendar ? '#ffffff' : '#334155',
+              border: showCalendar ? '1px solid #0f172a' : '1px solid #cbd5e1',
               padding: '8px 16px',
               borderRadius: '8px',
               fontWeight: 700,
@@ -152,11 +161,12 @@ export const ReservationsPage: React.FC<ReservationsPageProps> = ({
               alignItems: 'center',
               gap: '6px',
               cursor: 'pointer',
-              transition: 'all 0.15s ease'
+              transition: 'all 0.15s ease',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
             }}
           >
-            <LayoutList size={16} />
-            Table List View
+            <CalendarIcon size={15} />
+            {showCalendar ? 'Hide Booking Calendar' : '📅 Check Book Calendar'}
           </button>
         </div>
 
@@ -188,17 +198,23 @@ export const ReservationsPage: React.FC<ReservationsPageProps> = ({
             )}
           </button>
 
-          <button className="btn btn-primary" onClick={onOpenCreateModal}>
+          <button className="btn btn-primary" onClick={() => onOpenCreateModal()}>
             <Plus size={18} /> Create New Reservation
           </button>
         </div>
       </div>
 
-      {/* Property Availability Checker Section */}
-      <AvailabilityChecker />
+      {/* Property Availability Checker Section (Collapsible) */}
+      {showAvailabilityChecker && (
+        <AvailabilityChecker
+          onReserveUnit={(propId, inDate, outDate) => {
+            onOpenCreateModal({ propertyId: propId, checkInDate: inDate, checkOutDate: outDate });
+          }}
+        />
+      )}
 
-      {/* Render Calendar View or Table View */}
-      {viewMode === 'calendar' && (
+      {/* Booking Calendar Schedule (Collapsible - shown only when 'Check Book Calendar' is clicked) */}
+      {showCalendar && (
         <ReservationCalendarView
           reservations={reservations}
           properties={properties}
@@ -241,7 +257,9 @@ export const ReservationsPage: React.FC<ReservationsPageProps> = ({
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
           >
-            <option value="All">All Statuses</option>
+            <option value="Active">Active Bookings (Current & Future)</option>
+            <option value="History">Completed & Cancelled (History)</option>
+            <option value="All">All Statuses (Everything)</option>
             <option value="Inquiry">Inquiry</option>
             <option value="Reserved">Reserved</option>
             <option value="Confirmed">Confirmed</option>
@@ -275,11 +293,6 @@ export const ReservationsPage: React.FC<ReservationsPageProps> = ({
             <option value="propertyName-asc">Property Name (A-Z)</option>
           </select>
         </div>
-
-        <button className="btn btn-primary" onClick={onOpenCreateModal}>
-          <Plus size={18} />
-          Create Reservation
-        </button>
       </div>
 
       {/* Reservation List Table Card */}

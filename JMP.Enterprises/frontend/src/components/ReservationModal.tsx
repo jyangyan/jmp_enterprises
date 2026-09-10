@@ -25,6 +25,7 @@ interface ReservationModalProps {
   existingReservations?: Reservation[];
   onRefreshGuests: () => Promise<void>;
   initialData?: Reservation | null;
+  prefillData?: { propertyId?: number; checkInDate?: string; checkOutDate?: string };
 }
 
 export const ReservationModal: React.FC<ReservationModalProps> = ({
@@ -36,6 +37,7 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
   existingReservations = [],
   onRefreshGuests,
   initialData,
+  prefillData,
 }) => {
   const todayStr = new Date().toISOString().split('T')[0];
 
@@ -96,17 +98,27 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
           notes: initialData.notes || '',
         });
       } else {
-        const defaultProp = properties[0];
+        const targetPropId = prefillData?.propertyId || (properties[0] ? properties[0].propertyId : 0);
+        const targetProp = properties.find(p => p.propertyId === targetPropId) || properties[0];
+        const inDate = prefillData?.checkInDate || todayStr;
+        const outDate = prefillData?.checkOutDate || new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0];
+
+        // Calculate days
+        const d1 = new Date(inDate);
+        const d2 = new Date(outDate);
+        const diffTime = Math.max(1, Math.ceil((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24)));
+        const dailyRate = targetProp ? targetProp.defaultDailyRate : 0;
+
         setFormData({
-          propertyId: defaultProp ? defaultProp.propertyId : 0,
+          propertyId: targetProp ? targetProp.propertyId : 0,
           guestId: guests[0] ? guests[0].guestId : 0,
           rentalType: 'ShortStay',
           bookingSource: 'Direct',
-          checkInDate: todayStr,
-          checkOutDate: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0],
-          dailyRate: defaultProp ? defaultProp.defaultDailyRate : 0,
-          monthlyRate: defaultProp ? defaultProp.defaultMonthlyRate : 0,
-          agreedRentalAmount: defaultProp ? defaultProp.defaultDailyRate * 3 : 0,
+          checkInDate: inDate,
+          checkOutDate: outDate,
+          dailyRate: dailyRate,
+          monthlyRate: targetProp ? targetProp.defaultMonthlyRate : 0,
+          agreedRentalAmount: dailyRate * diffTime,
           securityDeposit: 0,
           reservationFee: 0,
           reservationStatus: 'Confirmed',
@@ -136,6 +148,7 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
       (r) =>
         r.propertyId === formData.propertyId &&
         r.reservationStatus !== 'Cancelled' &&
+        r.reservationStatus !== 'CheckedOut' &&
         (!initialData || r.reservationId !== initialData.reservationId)
     )
     .sort((a, b) => new Date(a.checkInDate).getTime() - new Date(b.checkInDate).getTime());

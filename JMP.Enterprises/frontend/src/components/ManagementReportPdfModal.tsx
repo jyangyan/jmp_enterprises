@@ -76,6 +76,13 @@ export const ManagementReportPdfModal: React.FC<ManagementReportPdfModalProps> =
               padding-bottom: 12px;
               margin-bottom: 16px;
             }
+            .logo-text-section img {
+              height: 50px;
+              width: auto;
+              max-width: 120px;
+              object-fit: contain;
+              margin-right: 12px;
+            }
             .logo-text-section h1 {
               font-size: 20pt;
               font-weight: 800;
@@ -330,23 +337,22 @@ export const ManagementReportPdfModal: React.FC<ManagementReportPdfModalProps> =
             {/* Header Banner */}
             <div className="header-banner">
               <div className="logo-text-section">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '8px',
-                    background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-                    color: '#ffffff',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: 800,
-                    fontSize: '1rem'
-                  }}>
-                    JMP
-                  </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <img
+                    src="/logo.png"
+                    alt="JMP Rental Property Logo"
+                    style={{
+                      height: '52px',
+                      width: 'auto',
+                      objectFit: 'contain',
+                      display: 'block'
+                    }}
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = 'none';
+                    }}
+                  />
                   <div>
-                    <h1 style={{ fontSize: '18pt', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                    <h1 style={{ fontSize: '18pt', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>
                       JMP RENTAL PROPERTY
                     </h1>
                     <p style={{ margin: '2px 0 0 0', color: '#475569', fontSize: '8.5pt' }}>

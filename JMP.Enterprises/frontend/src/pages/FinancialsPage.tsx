@@ -207,7 +207,7 @@ export const FinancialsPage: React.FC<FinancialsPageProps> = ({ properties, onRe
       ) : summary ? (
         <>
           {/* Top KPI Metric Cards */}
-          <div className="dashboard-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '28px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '28px' }}>
             {/* Total Revenue */}
             <div className="stat-card" style={{ borderLeft: '4px solid #10b981' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>

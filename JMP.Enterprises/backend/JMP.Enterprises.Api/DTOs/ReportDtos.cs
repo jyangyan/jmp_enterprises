@@ -15,9 +15,9 @@ public class FinancialTransactionDto
 {
     public string TransactionId { get; set; } = string.Empty;
     public DateTime TransactionDate { get; set; }
-    public int PropertyId { get; set; }
-    public string PropertyName { get; set; } = string.Empty;
-    public string PropertyCode { get; set; } = string.Empty;
+    public int? PropertyId { get; set; }
+    public string? PropertyName { get; set; }
+    public string? PropertyCode { get; set; }
     public int? ReservationId { get; set; }
     public string? RentalType { get; set; }
     public string? BookingSource { get; set; }
@@ -42,7 +42,7 @@ public class MonthlyProfitabilityDto
     public decimal Revenue { get; set; }
     public decimal Expenses { get; set; }
     public decimal NetProfit { get; set; }
-    public double ProfitMargin { get; set; }
+    public decimal ProfitMargin { get; set; }
 }
 
 public class PropertyPerformanceDto
@@ -72,7 +72,7 @@ public class DemandTrendDto
     public int ConfirmedReservationCount { get; set; }
     public int CancelledReservationCount { get; set; }
     public int OccupiedDays { get; set; }
-    public double AverageLengthOfStay { get; set; }
+    public double? AverageLengthOfStay { get; set; }
 }
 
 public class RentalTypePerformanceDto
@@ -88,8 +88,8 @@ public class RentalTypePerformanceDto
 public class ExpenseAnalysisDto
 {
     public string ExpenseCategory { get; set; } = string.Empty;
-    public int PropertyId { get; set; }
-    public string PropertyName { get; set; } = string.Empty;
+    public int? PropertyId { get; set; }
+    public string? PropertyName { get; set; }
     public int? ReservationId { get; set; }
     public string? RentalType { get; set; }
     public decimal TotalAmount { get; set; }
