@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Building2, 
   LayoutDashboard, 
@@ -14,12 +14,15 @@ import {
   ShoppingBag,
   ShieldAlert,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  RefreshCw,
+  Check,
+  Layers
 } from 'lucide-react';
 import { Business } from '../types/business';
 
 export type ActiveModule = 'home' | 'rental' | 'laundry' | 'print' | 'minimart' | 'user-access';
-export type ActiveRentalTab = 'dashboard' | 'properties' | 'guests' | 'reservations' | 'payments' | 'expenses' | 'financials' | 'reports';
+export type ActiveRentalTab = 'dashboard' | 'properties' | 'guests' | 'reservations' | 'payments' | 'expenses' | 'financials' | 'reports' | 'transactions';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -31,6 +34,8 @@ interface AdminLayoutProps {
   currentUser?: string;
   userRole?: string;
   onLogout?: () => void;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ 
@@ -43,7 +48,18 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   currentUser = 'Admin User',
   userRole = 'Owner',
   onLogout,
+  onRefresh,
+  isRefreshing = false,
 }) => {
+  const [justRefreshed, setJustRefreshed] = useState<boolean>(false);
+
+  const handleGlobalRefresh = () => {
+    if (onRefresh) {
+      onRefresh();
+      setJustRefreshed(true);
+      setTimeout(() => setJustRefreshed(false), 2500);
+    }
+  };
 
   const getBusinessIcon = (code: string) => {
     switch (code) {
@@ -258,6 +274,14 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                 <Sparkles size={18} />
                 <span>Reports & Analytics</span>
               </button>
+
+              <button 
+                className={`nav-item ${activeRentalTab === 'transactions' ? 'active' : ''}`}
+                onClick={() => onRentalTabChange('transactions')}
+              >
+                <Layers size={18} />
+                <span>All Transactions & History</span>
+              </button>
             </div>
           )}
 
@@ -296,6 +320,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                     {activeRentalTab === 'payments' && 'Rental Payments'}
                     {activeRentalTab === 'expenses' && 'Expense Management'}
                     {activeRentalTab === 'financials' && 'Profitability & Financial Summary'}
+                    {activeRentalTab === 'reports' && 'Reports & Analytics'}
+                    {activeRentalTab === 'transactions' && 'System Master Transactions & Audit Stream'}
                   </span>
                 </>
               )}
@@ -303,6 +329,42 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           </div>
 
           <div className="header-user" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {onRefresh && (
+              <button
+                onClick={handleGlobalRefresh}
+                disabled={isRefreshing}
+                title="Refresh Page & Master Data"
+                style={{
+                  background: justRefreshed ? '#dcfce7' : 'var(--primary-light, #eff6ff)',
+                  color: justRefreshed ? '#15803d' : 'var(--primary-color, #2563eb)',
+                  border: `1px solid ${justRefreshed ? '#86efac' : '#bfdbfe'}`,
+                  borderRadius: '8px',
+                  padding: '7px 14px',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  cursor: isRefreshing ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                  marginRight: '6px'
+                }}
+              >
+                {justRefreshed ? (
+                  <>
+                    <Check size={15} />
+                    <span>Data Refreshed!</span>
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw size={15} className={isRefreshing ? 'animate-spin' : ''} />
+                    <span>{isRefreshing ? 'Refreshing...' : 'Refresh Page Data'}</span>
+                  </>
+                )}
+              </button>
+            )}
+
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <div className="user-avatar" style={{ background: '#3b82f6', color: '#ffffff', fontWeight: 700 }}>
                 {currentUser.substring(0, 2).toUpperCase()}

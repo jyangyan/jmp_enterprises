@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { CreditCard, Plus, Search, Filter, Trash2, Edit2, CheckCircle2, ArrowUpRight, Calendar, FileText, Printer } from 'lucide-react';
+import { CreditCard, Plus, Search, Filter, Trash2, Edit2, CheckCircle2, ArrowUpRight, Calendar, FileText, Printer, RefreshCw, Check } from 'lucide-react';
 import { Payment } from '../types/payment';
 import { Property } from '../types/property';
 import { Receipt } from '../types/receipt';
@@ -12,6 +12,8 @@ interface PaymentsPageProps {
   onOpenCreateModal: () => void;
   onOpenEditModal: (payment: Payment) => void;
   onDeletePayment: (payment: Payment) => void;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
 export const PaymentsPage: React.FC<PaymentsPageProps> = ({
@@ -20,8 +22,19 @@ export const PaymentsPage: React.FC<PaymentsPageProps> = ({
   onOpenCreateModal,
   onOpenEditModal,
   onDeletePayment,
+  onRefresh,
+  isRefreshing = false,
 }) => {
+  const [justRefreshed, setJustRefreshed] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState('');
+
+  const handleRefreshClick = () => {
+    if (onRefresh) {
+      onRefresh();
+      setJustRefreshed(true);
+      setTimeout(() => setJustRefreshed(false), 2500);
+    }
+  };
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>('All');
   const [selectedMethod, setSelectedMethod] = useState<string>('All');
   const [selectedType, setSelectedType] = useState<string>('All');
@@ -137,9 +150,40 @@ export const PaymentsPage: React.FC<PaymentsPageProps> = ({
           </p>
         </div>
 
-        <button className="btn btn-primary" onClick={onOpenCreateModal} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Plus size={18} /> Record Payment
-        </button>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {onRefresh && (
+            <button 
+              className="btn btn-secondary" 
+              onClick={handleRefreshClick} 
+              disabled={isRefreshing}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: justRefreshed ? '#dcfce7' : '#ffffff',
+                color: justRefreshed ? '#15803d' : '#334155',
+                borderColor: justRefreshed ? '#86efac' : '#cbd5e1',
+                fontWeight: 700
+              }}
+            >
+              {justRefreshed ? (
+                <>
+                  <Check size={16} />
+                  <span>Refreshed!</span>
+                </>
+              ) : (
+                <>
+                  <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
+                  <span>Refresh</span>
+                </>
+              )}
+            </button>
+          )}
+
+          <button className="btn btn-primary" onClick={onOpenCreateModal} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Plus size={18} /> Record Payment
+          </button>
+        </div>
       </div>
 
       {/* Summary KPI Cards */}

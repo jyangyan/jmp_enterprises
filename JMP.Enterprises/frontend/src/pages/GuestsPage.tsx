@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Plus, Edit2, Trash2, RotateCcw, Users, Building, Phone, Mail } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, RotateCcw, Users, Building, Phone, Mail, RefreshCw, Check } from 'lucide-react';
 import { Guest } from '../types/guest';
 
 interface GuestsPageProps {
@@ -10,6 +10,8 @@ interface GuestsPageProps {
   onOpenEditModal: (guest: Guest) => void;
   onDeactivate: (guest: Guest) => void;
   onReactivate: (guest: Guest) => void;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
 export const GuestsPage: React.FC<GuestsPageProps> = ({
@@ -20,8 +22,19 @@ export const GuestsPage: React.FC<GuestsPageProps> = ({
   onOpenEditModal,
   onDeactivate,
   onReactivate,
+  onRefresh,
+  isRefreshing = false,
 }) => {
+  const [justRefreshed, setJustRefreshed] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const handleRefreshClick = () => {
+    if (onRefresh) {
+      onRefresh();
+      setJustRefreshed(true);
+      setTimeout(() => setJustRefreshed(false), 2500);
+    }
+  };
 
   const filteredGuests = guests.filter((g) => {
     const query = searchQuery.toLowerCase();
@@ -60,10 +73,41 @@ export const GuestsPage: React.FC<GuestsPageProps> = ({
           </label>
         </div>
 
-        <button className="btn btn-primary" onClick={onOpenAddModal}>
-          <Plus size={18} />
-          Add Guest / Tenant
-        </button>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {onRefresh && (
+            <button 
+              className="btn btn-secondary" 
+              onClick={handleRefreshClick} 
+              disabled={isRefreshing}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: justRefreshed ? '#dcfce7' : '#ffffff',
+                color: justRefreshed ? '#15803d' : '#334155',
+                borderColor: justRefreshed ? '#86efac' : '#cbd5e1',
+                fontWeight: 700
+              }}
+            >
+              {justRefreshed ? (
+                <>
+                  <Check size={16} />
+                  <span>Refreshed!</span>
+                </>
+              ) : (
+                <>
+                  <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
+                  <span>Refresh</span>
+                </>
+              )}
+            </button>
+          )}
+
+          <button className="btn btn-primary" onClick={onOpenAddModal}>
+            <Plus size={18} />
+            Add Guest / Tenant
+          </button>
+        </div>
       </div>
 
       {/* Guest Table Card */}

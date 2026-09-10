@@ -70,4 +70,10 @@ export interface CheckoutSettlementInput {
   securityDepositReturned: number;
   settlementStatus: string;
   notes?: string;
+
+  // Direct Payment Collection at Checkout
+  paymentAmount?: number;
+  paymentMethod?: string;
+  paymentType?: string;
+  referenceNumber?: string;
 }

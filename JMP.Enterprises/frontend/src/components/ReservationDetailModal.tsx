@@ -357,13 +357,34 @@ export const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
                     + Reservation Receipt
                   </button>
 
-                  <button
-                    className="btn btn-secondary btn-sm"
-                    onClick={() => setIsCheckoutModalOpen(true)}
-                    style={{ fontSize: '0.75rem', background: '#f8fafc', borderColor: '#cbd5e1' }}
-                  >
-                    Checkout Settlement
-                  </button>
+                  {(() => {
+                    const existingCheckoutReceipt = receipts.find(
+                      (r) => (r.receiptType === 'Checkout' || r.receiptType === 'FinalSettlement' || r.paymentType?.includes('Checkout')) && !r.isVoided
+                    );
+
+                    if (existingCheckoutReceipt) {
+                      return (
+                        <button
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => handleViewReceipt(existingCheckoutReceipt)}
+                          style={{ fontSize: '0.75rem', background: '#dcfce7', color: '#15803d', borderColor: '#86efac', fontWeight: 700 }}
+                          title="Checkout Settlement is complete. Click to view official receipt."
+                        >
+                          ✓ View Checkout Receipt
+                        </button>
+                      );
+                    }
+
+                    return (
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => setIsCheckoutModalOpen(true)}
+                        style={{ fontSize: '0.75rem', background: '#f8fafc', borderColor: '#cbd5e1' }}
+                      >
+                        Checkout Settlement
+                      </button>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -397,18 +418,23 @@ export const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
                       </tr>
                     </thead>
                     <tbody>
-                      {receipts.map((r) => (
-                        <tr key={r.receiptId} style={{ background: r.isVoided ? '#fef2f2' : 'transparent' }}>
-                          <td style={{ fontFamily: 'monospace', fontWeight: 700 }}>{r.receiptNumber}</td>
-                          <td>{formatDate(r.receiptDate)}</td>
-                          <td>
-                            <span className="badge" style={{ fontSize: '0.7rem', padding: '2px 6px', background: '#eff6ff', color: '#1d4ed8' }}>
-                              {r.paymentType || r.receiptType}
-                            </span>
-                          </td>
-                          <td style={{ textAlign: 'right', fontWeight: 700, color: '#10b981' }}>
-                            ₱{r.amount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                          </td>
+                      {receipts.map((r) => {
+                        const displayAmt = (r.amount && r.amount > 0)
+                          ? r.amount
+                          : (r.totalRentalAmount || r.agreedRentalAmount || reservation.agreedRentalAmount || 0);
+
+                        return (
+                          <tr key={r.receiptId} style={{ background: r.isVoided ? '#fef2f2' : 'transparent' }}>
+                            <td style={{ fontFamily: 'monospace', fontWeight: 700 }}>{r.receiptNumber}</td>
+                            <td>{formatDate(r.receiptDate)}</td>
+                            <td>
+                              <span className="badge" style={{ fontSize: '0.7rem', padding: '2px 6px', background: '#eff6ff', color: '#1d4ed8' }}>
+                                {r.paymentType || r.receiptType}
+                              </span>
+                            </td>
+                            <td style={{ textAlign: 'right', fontWeight: 700, color: '#10b981' }}>
+                              ₱{displayAmt.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                            </td>
                           <td style={{ textAlign: 'center' }}>
                             {r.isVoided ? (
                               <span style={{ fontSize: '0.7rem', color: '#dc2626', fontWeight: 700, background: '#fee2e2', padding: '2px 6px', borderRadius: '4px' }}>
@@ -441,7 +467,8 @@ export const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
                             </div>
                           </td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

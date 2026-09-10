@@ -79,4 +79,10 @@ public class CheckoutSettlementDto
     public decimal SecurityDepositReturned { get; set; }
     public string SettlementStatus { get; set; } = "PAID IN FULL";
     public string? Notes { get; set; }
+
+    // Direct Payment Collection at Checkout
+    public decimal PaymentAmount { get; set; }
+    public string PaymentMethod { get; set; } = "Cash";
+    public string PaymentType { get; set; } = "Rental Payment";
+    public string? ReferenceNumber { get; set; }
 }

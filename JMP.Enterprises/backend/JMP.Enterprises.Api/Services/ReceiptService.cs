@@ -166,6 +166,50 @@ public class ReceiptService : IReceiptService
             throw new ArgumentException("Reservation not found.");
         }
 
+        // Check if a checkout receipt already exists to avoid generating duplicate receipt numbers
+        var existingReceipt = await _context.Receipts
+            .FirstOrDefaultAsync(r => r.ReservationId == dto.ReservationId 
+                                   && (r.ReceiptType == "Checkout" || r.ReceiptType == "FinalSettlement") 
+                                   && !r.IsVoided);
+
+        if (existingReceipt != null && dto.PaymentAmount == 0)
+        {
+            // If already checked out and no new payment is recorded, return existing receipt
+            return MapToDto(existingReceipt, reservation);
+        }
+
+        // 1. Record immediate payment if provided at checkout
+        Payment? newPayment = null;
+        if (dto.PaymentAmount > 0)
+        {
+            newPayment = new Payment
+            {
+                ReservationId = reservation.ReservationId,
+                PropertyId = reservation.PropertyId,
+                PaymentDate = DateTime.Now,
+                Amount = dto.PaymentAmount,
+                PaymentType = string.IsNullOrWhiteSpace(dto.PaymentType) ? "Rental Payment" : dto.PaymentType,
+                PaymentMethod = string.IsNullOrWhiteSpace(dto.PaymentMethod) ? "Cash" : dto.PaymentMethod,
+                ReferenceNumber = dto.ReferenceNumber,
+                Notes = string.IsNullOrWhiteSpace(dto.Notes) ? "Payment recorded at Checkout" : $"Checkout settlement payment: {dto.Notes}",
+                CreatedDate = DateTime.Now
+            };
+            _context.Payments.Add(newPayment);
+            await _context.SaveChangesAsync();
+        }
+
+        // 2. Automatically set reservation status to CheckedOut & property to Available
+        reservation.ReservationStatus = "CheckedOut";
+        reservation.UpdatedDate = DateTime.Now;
+
+        if (reservation.Property != null)
+        {
+            reservation.Property.Status = "Available";
+            reservation.Property.UpdatedDate = DateTime.Now;
+        }
+
+        await _context.SaveChangesAsync();
+
         var payments = await _context.Payments
             .Where(p => p.ReservationId == dto.ReservationId)
             .ToListAsync();
@@ -187,7 +231,11 @@ public class ReceiptService : IReceiptService
 
         decimal totalRentalAmount = reservation.AgreedRentalAmount;
         decimal outstandingBalance = Math.Max(0, totalRentalAmount + dto.AdditionalCharges - totalRentalReceived);
-        decimal finalAmountPaid = totalRentalReceived;
+        
+        // Amount on receipt should represent the settled rental value or received payment
+        decimal finalAmountPaid = totalRentalReceived > 0 
+            ? totalRentalReceived 
+            : (dto.PaymentAmount > 0 ? dto.PaymentAmount : totalRentalAmount + dto.AdditionalCharges);
 
         int year = DateTime.Now.Year;
         string receiptNumber = await GenerateNextReceiptNumberAsync(year);
@@ -203,6 +251,7 @@ public class ReceiptService : IReceiptService
             ReceiptNumber = receiptNumber,
             ReceiptType = "Checkout",
             ReservationId = reservation.ReservationId,
+            PaymentId = newPayment?.PaymentId,
             ReceiptDate = DateTime.Now,
             PaymentDate = DateTime.Now,
             Amount = finalAmountPaid,
@@ -210,8 +259,9 @@ public class ReceiptService : IReceiptService
             GuestCompanyName = reservation.Guest.CompanyName,
             PropertyName = reservation.Property.PropertyName,
             PropertyCode = reservation.Property.PropertyCode,
-            PaymentType = "Checkout / Final Settlement",
-            PaymentMethod = "N/A",
+            PaymentType = newPayment != null ? newPayment.PaymentType : "Checkout / Final Settlement",
+            PaymentMethod = newPayment != null ? newPayment.PaymentMethod : "N/A",
+            ReferenceNumber = newPayment?.ReferenceNumber,
             Purpose = $"Final Rental Settlement – {reservation.Property.PropertyName}",
             RentalType = reservation.RentalType,
             CheckInDate = reservation.CheckInDate,

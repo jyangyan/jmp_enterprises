@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Eye, Edit2, XCircle, CalendarDays, Filter, ArrowUpDown, ArrowUp, ArrowDown, LogOut, LayoutList, Calendar as CalendarIcon } from 'lucide-react';
+import { Plus, Eye, Edit2, XCircle, CalendarDays, Filter, ArrowUpDown, ArrowUp, ArrowDown, LogOut, LayoutList, Calendar as CalendarIcon, RefreshCw, Check } from 'lucide-react';
 import { Reservation } from '../types/reservation';
 import { Property } from '../types/property';
 import { AvailabilityChecker } from '../components/AvailabilityChecker';
@@ -14,6 +14,8 @@ interface ReservationsPageProps {
   onOpenDetailModal: (reservation: Reservation) => void;
   onCancelReservation: (reservation: Reservation) => void;
   onRefreshData?: () => void;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
 type SortField = 'checkInDate' | 'checkOutDate' | 'createdDate' | 'agreedRentalAmount' | 'guestName' | 'propertyName';
@@ -27,8 +29,18 @@ export const ReservationsPage: React.FC<ReservationsPageProps> = ({
   onOpenEditModal,
   onOpenDetailModal,
   onCancelReservation,
-  onRefreshData
+  onRefreshData,
+  onRefresh,
+  isRefreshing = false,
 }) => {
+  const [justRefreshed, setJustRefreshed] = useState<boolean>(false);
+
+  const handleRefreshClick = () => {
+    if (onRefreshData) onRefreshData();
+    if (onRefresh) onRefresh();
+    setJustRefreshed(true);
+    setTimeout(() => setJustRefreshed(false), 2500);
+  };
   const [viewMode, setViewMode] = useState<ViewMode>('calendar');
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>('All');
   const [selectedRentalType, setSelectedRentalType] = useState<string>('All');
@@ -148,9 +160,38 @@ export const ReservationsPage: React.FC<ReservationsPageProps> = ({
           </button>
         </div>
 
-        <button className="btn btn-primary" onClick={onOpenCreateModal}>
-          <Plus size={18} /> Create New Reservation
-        </button>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <button 
+            className="btn btn-secondary" 
+            onClick={handleRefreshClick} 
+            disabled={isRefreshing}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: justRefreshed ? '#dcfce7' : '#ffffff',
+              color: justRefreshed ? '#15803d' : '#334155',
+              borderColor: justRefreshed ? '#86efac' : '#cbd5e1',
+              fontWeight: 700
+            }}
+          >
+            {justRefreshed ? (
+              <>
+                <Check size={16} />
+                <span>Refreshed!</span>
+              </>
+            ) : (
+              <>
+                <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
+                <span>Refresh</span>
+              </>
+            )}
+          </button>
+
+          <button className="btn btn-primary" onClick={onOpenCreateModal}>
+            <Plus size={18} /> Create New Reservation
+          </button>
+        </div>
       </div>
 
       {/* Property Availability Checker Section */}
@@ -466,6 +507,7 @@ export const ReservationsPage: React.FC<ReservationsPageProps> = ({
             setSelectedForCheckout(null);
             window.dispatchEvent(new CustomEvent('open-receipt-modal', { detail: receipt }));
             if (onRefreshData) onRefreshData();
+            if (onRefresh) onRefresh();
           }}
         />
       )}

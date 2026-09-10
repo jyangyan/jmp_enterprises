@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { TrendingDown, Plus, Search, Filter, Trash2, Edit2, Building2, Tag, Calendar } from 'lucide-react';
+import { TrendingDown, Plus, Search, Filter, Trash2, Edit2, Building2, Tag, Calendar, RefreshCw, Check } from 'lucide-react';
 import { Expense } from '../types/expense';
 import { Property } from '../types/property';
 
@@ -9,6 +9,8 @@ interface ExpensesPageProps {
   onOpenCreateModal: () => void;
   onOpenEditModal: (expense: Expense) => void;
   onDeleteExpense: (expense: Expense) => void;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
 export const ExpensesPage: React.FC<ExpensesPageProps> = ({
@@ -17,8 +19,19 @@ export const ExpensesPage: React.FC<ExpensesPageProps> = ({
   onOpenCreateModal,
   onOpenEditModal,
   onDeleteExpense,
+  onRefresh,
+  isRefreshing = false,
 }) => {
+  const [justRefreshed, setJustRefreshed] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState('');
+
+  const handleRefreshClick = () => {
+    if (onRefresh) {
+      onRefresh();
+      setJustRefreshed(true);
+      setTimeout(() => setJustRefreshed(false), 2500);
+    }
+  };
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>('All');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
 
@@ -125,13 +138,44 @@ export const ExpensesPage: React.FC<ExpensesPageProps> = ({
           </p>
         </div>
 
-        <button
-          className="btn btn-primary"
-          onClick={onOpenCreateModal}
-          style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#dc2626', borderColor: '#dc2626' }}
-        >
-          <Plus size={18} /> Log Expense
-        </button>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {onRefresh && (
+            <button 
+              className="btn btn-secondary" 
+              onClick={handleRefreshClick} 
+              disabled={isRefreshing}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: justRefreshed ? '#dcfce7' : '#ffffff',
+                color: justRefreshed ? '#15803d' : '#334155',
+                borderColor: justRefreshed ? '#86efac' : '#cbd5e1',
+                fontWeight: 700
+              }}
+            >
+              {justRefreshed ? (
+                <>
+                  <Check size={16} />
+                  <span>Refreshed!</span>
+                </>
+              ) : (
+                <>
+                  <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
+                  <span>Refresh</span>
+                </>
+              )}
+            </button>
+          )}
+
+          <button
+            className="btn btn-primary"
+            onClick={onOpenCreateModal}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#dc2626', borderColor: '#dc2626' }}
+          >
+            <Plus size={18} /> Log Expense
+          </button>
+        </div>
       </div>
 
       {/* Summary KPI Cards */}

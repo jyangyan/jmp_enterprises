@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Building2, 
   CheckCircle2, 
@@ -8,10 +8,14 @@ import {
   LogIn, 
   LogOut, 
   User, 
-  Building 
+  Building,
+  RefreshCw,
+  TrendingUp,
+  Check
 } from 'lucide-react';
 import { Property } from '../types/property';
 import { Reservation } from '../types/reservation';
+import { TrendGraphChart, TrendDataPoint } from '../components/TrendGraphChart';
 
 interface DashboardPageProps {
   properties: Property[];
@@ -20,6 +24,8 @@ interface DashboardPageProps {
   onNavigateToReservations: () => void;
   onOpenAddPropertyModal: () => void;
   onOpenCreateReservationModal: () => void;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
@@ -29,7 +35,18 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   onNavigateToReservations,
   onOpenAddPropertyModal,
   onOpenCreateReservationModal,
+  onRefresh,
+  isRefreshing = false,
 }) => {
+  const [justRefreshed, setJustRefreshed] = useState<boolean>(false);
+
+  const handleRefresh = () => {
+    if (onRefresh) {
+      onRefresh();
+      setJustRefreshed(true);
+      setTimeout(() => setJustRefreshed(false), 2500);
+    }
+  };
   const now = new Date();
   now.setHours(0, 0, 0, 0);
 
@@ -105,8 +122,80 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     });
   };
 
+  // Generate 6-Month Trend Graph Points
+  const trendPoints: TrendDataPoint[] = (() => {
+    const monthsMap = new Map<string, { month: string; revenue: number; expenses: number; netProfit: number }>();
+    const todayDate = new Date();
+    
+    // Past 6 months array
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(todayDate.getFullYear(), todayDate.getMonth() - i, 1);
+      const label = d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      monthsMap.set(monthKey, { month: label, revenue: 0, expenses: 0, netProfit: 0 });
+    }
+
+    reservations.forEach((r) => {
+      if (r.reservationStatus === 'Cancelled') return;
+      const d = new Date(r.checkInDate);
+      const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const entry = monthsMap.get(monthKey);
+      if (entry) {
+        const amt = r.agreedRentalAmount || 0;
+        entry.revenue += amt;
+        entry.expenses += Math.round(amt * 0.22); // Operating expenses estimation
+        entry.netProfit = entry.revenue - entry.expenses;
+      }
+    });
+
+    return Array.from(monthsMap.values());
+  })();
+
   return (
     <div>
+      {/* Dashboard Action Header with Refresh */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800, color: '#0f172a' }}>
+            Rental Management Dashboard
+          </h2>
+          <p style={{ margin: '2px 0 0 0', fontSize: '0.85rem', color: '#64748b' }}>
+            Real-time occupancy status, active bookings, and automated trend analytics
+          </p>
+        </div>
+
+        {onRefresh && (
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="btn btn-secondary"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontWeight: 700,
+              fontSize: '0.85rem',
+              padding: '8px 16px',
+              background: justRefreshed ? '#dcfce7' : '#ffffff',
+              color: justRefreshed ? '#15803d' : '#334155',
+              borderColor: justRefreshed ? '#86efac' : '#cbd5e1'
+            }}
+          >
+            {justRefreshed ? (
+              <>
+                <Check size={16} />
+                <span>Refreshed!</span>
+              </>
+            ) : (
+              <>
+                <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
+                <span>Refresh Dashboard</span>
+              </>
+            )}
+          </button>
+        )}
+      </div>
+
       {/* Metrics Row */}
       <div className="stats-grid">
         <div className="stat-card">
@@ -159,6 +248,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Real-time Trend Graph with Uptrend & Downtrend Detection */}
+      <TrendGraphChart 
+        data={trendPoints} 
+        title="Dashboard Profitability & Income Trend" 
+        subtitle="Automatic detection of business growth, revenue expansion, and uptrend/downtrend alerts"
+      />
 
       {/* Action Banner */}
       <div className="card" style={{ marginBottom: '28px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

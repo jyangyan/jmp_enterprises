@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Plus, MapPin, Edit2, Trash2, RotateCcw, Building2 } from 'lucide-react';
+import { Search, Plus, MapPin, Edit2, Trash2, RotateCcw, Building2, RefreshCw, Check } from 'lucide-react';
 import { Property } from '../types/property';
 
 interface PropertiesPageProps {
@@ -10,6 +10,8 @@ interface PropertiesPageProps {
   onOpenEditModal: (property: Property) => void;
   onDeactivate: (property: Property) => void;
   onReactivate: (property: Property) => void;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
 export const PropertiesPage: React.FC<PropertiesPageProps> = ({
@@ -20,9 +22,20 @@ export const PropertiesPage: React.FC<PropertiesPageProps> = ({
   onOpenEditModal,
   onDeactivate,
   onReactivate,
+  onRefresh,
+  isRefreshing = false,
 }) => {
+  const [justRefreshed, setJustRefreshed] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('All');
+
+  const handleRefreshClick = () => {
+    if (onRefresh) {
+      onRefresh();
+      setJustRefreshed(true);
+      setTimeout(() => setJustRefreshed(false), 2500);
+    }
+  };
 
   // Filter properties
   const filteredProperties = properties.filter((p) => {
@@ -84,10 +97,41 @@ export const PropertiesPage: React.FC<PropertiesPageProps> = ({
           </label>
         </div>
 
-        <button className="btn btn-primary" onClick={onOpenAddModal}>
-          <Plus size={18} />
-          Add Property
-        </button>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {onRefresh && (
+            <button 
+              className="btn btn-secondary" 
+              onClick={handleRefreshClick} 
+              disabled={isRefreshing}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: justRefreshed ? '#dcfce7' : '#ffffff',
+                color: justRefreshed ? '#15803d' : '#334155',
+                borderColor: justRefreshed ? '#86efac' : '#cbd5e1',
+                fontWeight: 700
+              }}
+            >
+              {justRefreshed ? (
+                <>
+                  <Check size={16} />
+                  <span>Refreshed!</span>
+                </>
+              ) : (
+                <>
+                  <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
+                  <span>Refresh</span>
+                </>
+              )}
+            </button>
+          )}
+
+          <button className="btn btn-primary" onClick={onOpenAddModal}>
+            <Plus size={18} />
+            Add Property
+          </button>
+        </div>
       </div>
 
       {/* Property Cards Grid */}

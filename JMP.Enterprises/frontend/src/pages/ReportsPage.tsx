@@ -18,7 +18,8 @@ import {
   Sparkles,
   CheckCircle2,
   AlertTriangle,
-  Users
+  Users,
+  Check
 } from 'lucide-react';
 import { Property } from '../types/property';
 import { 
@@ -29,12 +30,16 @@ import {
 } from '../types/reports';
 import { reportsApi } from '../api/reportsApi';
 import { ManagementReportPdfModal } from '../components/ManagementReportPdfModal';
+import { TrendGraphChart, TrendDataPoint } from '../components/TrendGraphChart';
 
 interface ReportsPageProps {
   properties: Property[];
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
-export const ReportsPage: React.FC<ReportsPageProps> = ({ properties }) => {
+export const ReportsPage: React.FC<ReportsPageProps> = ({ properties, onRefresh, isRefreshing = false }) => {
+  const [justRefreshed, setJustRefreshed] = useState<boolean>(false);
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>('All');
   const [presetRange, setPresetRange] = useState<string>('all');
   const [startDate, setStartDate] = useState<string>('');
@@ -86,6 +91,13 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({ properties }) => {
       setStartDate('');
       setEndDate('');
     }
+  };
+
+  const handleRefreshClick = async () => {
+    if (onRefresh) onRefresh();
+    await loadData();
+    setJustRefreshed(true);
+    setTimeout(() => setJustRefreshed(false), 2500);
   };
 
   const loadData = async () => {
@@ -167,25 +179,34 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({ properties }) => {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button
-            onClick={loadData}
-            disabled={loading}
+            onClick={handleRefreshClick}
+            disabled={loading || isRefreshing}
             style={{
-              background: '#ffffff',
-              border: '1px solid #cbd5e1',
-              color: '#334155',
+              background: justRefreshed ? '#dcfce7' : '#ffffff',
+              border: `1px solid ${justRefreshed ? '#86efac' : '#cbd5e1'}`,
+              color: justRefreshed ? '#15803d' : '#334155',
               padding: '10px 16px',
               borderRadius: '10px',
-              fontWeight: 600,
+              fontWeight: 700,
               fontSize: '0.88rem',
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              cursor: 'pointer',
+              cursor: loading || isRefreshing ? 'not-allowed' : 'pointer',
               boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
             }}
           >
-            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-            Refresh
+            {justRefreshed ? (
+              <>
+                <Check size={16} />
+                <span>Refreshed!</span>
+              </>
+            ) : (
+              <>
+                <RefreshCw size={16} className={loading || isRefreshing ? 'animate-spin' : ''} />
+                <span>{loading || isRefreshing ? 'Refreshing...' : 'Refresh Analytics'}</span>
+              </>
+            )}
           </button>
 
           <button
@@ -478,6 +499,18 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({ properties }) => {
               </div>
             </div>
           </div>
+
+          {/* Interactive Trend Analysis with Uptrend / Downtrend Detection */}
+          <TrendGraphChart
+            data={overview.monthlyTrends.map((t) => ({
+              month: t.yearMonth,
+              revenue: t.revenue,
+              expenses: t.expenses,
+              netProfit: t.netProfit,
+            }))}
+            title="Executive Monthly Financial & Profitability Trend"
+            subtitle="Automated analysis of income growth, expense ratio, and net profitability trajectory"
+          />
 
           {/* Section 1: Property Performance Comparison (Lily, Lala, Pamae) */}
           <div style={{

@@ -8,6 +8,7 @@ import { PaymentsPage } from './pages/PaymentsPage';
 import { ExpensesPage } from './pages/ExpensesPage';
 import { FinancialsPage } from './pages/FinancialsPage';
 import { ReportsPage } from './pages/ReportsPage';
+import { SystemTransactionsPage } from './pages/SystemTransactionsPage';
 import { EnterpriseHomePage } from './pages/EnterpriseHomePage';
 import { BusinessPlaceholderPage } from './pages/BusinessPlaceholderPage';
 import { UserAccessPage } from './pages/UserAccessPage';
@@ -509,10 +510,12 @@ export const App: React.FC = () => {
       currentUser={currentUser}
       userRole="Owner"
       onLogout={handleLogout}
+      onRefresh={fetchAllData}
+      isRefreshing={loading}
     >
       {error && <div className="error-alert">{error}</div>}
 
-      {loading && activeModule === 'rental' ? (
+      {loading && activeModule === 'rental' && (properties.length === 0 && reservations.length === 0) ? (
         <div className="card" style={{ textAlign: 'center', padding: '48px' }}>
           <p style={{ color: 'var(--text-secondary)' }}>Loading JMP Rental Property data...</p>
         </div>
@@ -546,6 +549,8 @@ export const App: React.FC = () => {
             onNavigateToReservations={() => setActiveRentalTab('reservations')}
             onOpenAddPropertyModal={handleOpenAddProperty}
             onOpenCreateReservationModal={handleOpenCreateReservation}
+            onRefresh={fetchAllData}
+            isRefreshing={loading}
           />
         ) : activeRentalTab === 'properties' ? (
           <PropertiesPage
@@ -556,6 +561,8 @@ export const App: React.FC = () => {
             onOpenEditModal={handleOpenEditProperty}
             onDeactivate={handleDeactivateProperty}
             onReactivate={handleReactivateProperty}
+            onRefresh={fetchAllData}
+            isRefreshing={loading}
           />
         ) : activeRentalTab === 'guests' ? (
           <GuestsPage
@@ -566,6 +573,8 @@ export const App: React.FC = () => {
             onOpenEditModal={handleOpenEditGuest}
             onDeactivate={handleDeactivateGuest}
             onReactivate={handleReactivateGuest}
+            onRefresh={fetchAllData}
+            isRefreshing={loading}
           />
         ) : activeRentalTab === 'reservations' ? (
           <ReservationsPage
@@ -576,6 +585,8 @@ export const App: React.FC = () => {
             onOpenDetailModal={handleOpenDetailReservation}
             onCancelReservation={handleCancelReservation}
             onRefreshData={fetchReservations}
+            onRefresh={fetchAllData}
+            isRefreshing={loading}
           />
         ) : activeRentalTab === 'payments' ? (
           <PaymentsPage
@@ -584,6 +595,8 @@ export const App: React.FC = () => {
             onOpenCreateModal={handleOpenCreatePayment}
             onOpenEditModal={handleOpenEditPayment}
             onDeletePayment={handleDeletePayment}
+            onRefresh={fetchAllData}
+            isRefreshing={loading}
           />
         ) : activeRentalTab === 'expenses' ? (
           <ExpensesPage
@@ -592,11 +605,27 @@ export const App: React.FC = () => {
             onOpenCreateModal={handleOpenCreateExpense}
             onOpenEditModal={handleOpenEditExpense}
             onDeleteExpense={handleDeleteExpense}
+            onRefresh={fetchAllData}
+            isRefreshing={loading}
           />
         ) : activeRentalTab === 'financials' ? (
-          <FinancialsPage properties={properties} />
+          <FinancialsPage 
+            properties={properties} 
+            onRefresh={fetchAllData}
+            isRefreshing={loading}
+          />
+        ) : activeRentalTab === 'reports' ? (
+          <ReportsPage 
+            properties={properties} 
+            onRefresh={fetchAllData}
+            isRefreshing={loading}
+          />
         ) : (
-          <ReportsPage properties={properties} />
+          <SystemTransactionsPage
+            properties={properties}
+            onRefresh={fetchAllData}
+            isRefreshing={loading}
+          />
         )
       ) : (
         <EnterpriseHomePage

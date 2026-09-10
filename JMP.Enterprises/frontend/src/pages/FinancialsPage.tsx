@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart3, TrendingUp, TrendingDown, Building2, Calendar, RefreshCw, PieChart, Layers } from 'lucide-react';
+import { BarChart3, TrendingUp, TrendingDown, Building2, Calendar, RefreshCw, PieChart, Layers, Check } from 'lucide-react';
 import { FinancialSummary } from '../types/financial';
 import { Property } from '../types/property';
 import { financialApi } from '../api/financialApi';
+import { TrendGraphChart, TrendDataPoint } from '../components/TrendGraphChart';
 
 interface FinancialsPageProps {
   properties: Property[];
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
-export const FinancialsPage: React.FC<FinancialsPageProps> = ({ properties }) => {
+export const FinancialsPage: React.FC<FinancialsPageProps> = ({ properties, onRefresh, isRefreshing = false }) => {
+  const [justRefreshed, setJustRefreshed] = useState<boolean>(false);
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>('All');
 
   // Date Filter State
@@ -49,6 +53,13 @@ export const FinancialsPage: React.FC<FinancialsPageProps> = ({ properties }) =>
     }
   };
 
+  const handleRefreshClick = async () => {
+    if (onRefresh) onRefresh();
+    await fetchFinancials();
+    setJustRefreshed(true);
+    setTimeout(() => setJustRefreshed(false), 2500);
+  };
+
   const fetchFinancials = async () => {
     try {
       setLoading(true);
@@ -82,8 +93,32 @@ export const FinancialsPage: React.FC<FinancialsPageProps> = ({ properties }) =>
           </p>
         </div>
 
-        <button className="btn btn-secondary" onClick={fetchFinancials} title="Refresh Financials" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <RefreshCw size={16} /> Refresh
+        <button 
+          className="btn btn-secondary" 
+          onClick={handleRefreshClick} 
+          disabled={loading || isRefreshing}
+          title="Refresh Financials" 
+          style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '6px',
+            background: justRefreshed ? '#dcfce7' : '#ffffff',
+            color: justRefreshed ? '#15803d' : '#334155',
+            borderColor: justRefreshed ? '#86efac' : '#cbd5e1',
+            fontWeight: 700
+          }}
+        >
+          {justRefreshed ? (
+            <>
+              <Check size={16} />
+              <span>Refreshed!</span>
+            </>
+          ) : (
+            <>
+              <RefreshCw size={16} className={loading || isRefreshing ? 'animate-spin' : ''} />
+              <span>{loading || isRefreshing ? 'Refreshing...' : 'Refresh Financials'}</span>
+            </>
+          )}
         </button>
       </div>
 
@@ -259,6 +294,18 @@ export const FinancialsPage: React.FC<FinancialsPageProps> = ({ properties }) =>
               </div>
             </div>
           </div>
+
+          {/* Interactive Profitability & Cashflow Trend Graph (Uptrend & Downtrend Detection) */}
+          <TrendGraphChart
+            data={summary.monthlyTrends.map((t) => ({
+              month: t.monthYear,
+              revenue: t.revenue,
+              expenses: t.expenses,
+              netProfit: t.netProfit,
+            }))}
+            title="Monthly Profitability & Income Trend"
+            subtitle="Automated analysis of income growth, expense ratio, and net profitability trajectory"
+          />
 
           {/* Property Profitability Cards (Lily, Lala, Pamae, Villa Sampaguita) */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
