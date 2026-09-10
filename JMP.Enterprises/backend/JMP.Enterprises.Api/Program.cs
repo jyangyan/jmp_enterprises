@@ -34,6 +34,9 @@ builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IExpenseService, ExpenseService>();
 builder.Services.AddScoped<IFinancialService, FinancialService>();
 builder.Services.AddScoped<IReceiptService, ReceiptService>();
+builder.Services.AddScoped<IRentalAgreementService, RentalAgreementService>();
+builder.Services.AddScoped<IStatementOfAccountService, StatementOfAccountService>();
+builder.Services.AddScoped<IReportService, ReportService>();
 
 // Configure CORS — allow the React frontend (localhost:5173) to call our API
 builder.Services.AddCors(options =>

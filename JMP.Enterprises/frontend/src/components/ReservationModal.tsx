@@ -64,51 +64,62 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const prevIsOpenRef = React.useRef<boolean>(false);
+  const prevInitialDataRef = React.useRef<Reservation | null | undefined>(undefined);
+
   // Initialize form
   useEffect(() => {
-    if (initialData) {
-      const inDate = initialData.checkInDate ? initialData.checkInDate.split('T')[0] : todayStr;
-      let status = initialData.reservationStatus || 'Confirmed';
-      if (status === 'CheckedIn' && inDate > todayStr) {
-        status = 'Confirmed';
-      }
+    const isJustOpening = isOpen && !prevIsOpenRef.current;
+    const isTargetChanged = initialData !== prevInitialDataRef.current;
 
-      setFormData({
-        propertyId: initialData.propertyId,
-        guestId: initialData.guestId,
-        rentalType: initialData.rentalType || 'ShortStay',
-        bookingSource: initialData.bookingSource || 'Direct',
-        checkInDate: inDate,
-        checkOutDate: initialData.checkOutDate ? initialData.checkOutDate.split('T')[0] : '',
-        dailyRate: initialData.dailyRate || 0,
-        monthlyRate: initialData.monthlyRate || 0,
-        agreedRentalAmount: initialData.agreedRentalAmount || 0,
-        securityDeposit: initialData.securityDeposit || 0,
-        reservationFee: initialData.reservationFee || 0,
-        reservationStatus: status,
-        notes: initialData.notes || '',
-      });
-    } else {
-      const defaultProp = properties[0];
-      setFormData({
-        propertyId: defaultProp ? defaultProp.propertyId : 0,
-        guestId: guests[0] ? guests[0].guestId : 0,
-        rentalType: 'ShortStay',
-        bookingSource: 'Direct',
-        checkInDate: todayStr,
-        checkOutDate: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0],
-        dailyRate: defaultProp ? defaultProp.defaultDailyRate : 0,
-        monthlyRate: defaultProp ? defaultProp.defaultMonthlyRate : 0,
-        agreedRentalAmount: defaultProp ? defaultProp.defaultDailyRate * 3 : 0,
-        securityDeposit: 0,
-        reservationFee: 0,
-        reservationStatus: 'Confirmed',
-        notes: '',
-      });
+    if (isOpen && (isJustOpening || isTargetChanged)) {
+      if (initialData) {
+        const inDate = initialData.checkInDate ? initialData.checkInDate.split('T')[0] : todayStr;
+        let status = initialData.reservationStatus || 'Confirmed';
+        if (status === 'CheckedIn' && inDate > todayStr) {
+          status = 'Confirmed';
+        }
+
+        setFormData({
+          propertyId: initialData.propertyId,
+          guestId: initialData.guestId,
+          rentalType: initialData.rentalType || 'ShortStay',
+          bookingSource: initialData.bookingSource || 'Direct',
+          checkInDate: inDate,
+          checkOutDate: initialData.checkOutDate ? initialData.checkOutDate.split('T')[0] : '',
+          dailyRate: initialData.dailyRate || 0,
+          monthlyRate: initialData.monthlyRate || 0,
+          agreedRentalAmount: initialData.agreedRentalAmount || 0,
+          securityDeposit: initialData.securityDeposit || 0,
+          reservationFee: initialData.reservationFee || 0,
+          reservationStatus: status,
+          notes: initialData.notes || '',
+        });
+      } else {
+        const defaultProp = properties[0];
+        setFormData({
+          propertyId: defaultProp ? defaultProp.propertyId : 0,
+          guestId: guests[0] ? guests[0].guestId : 0,
+          rentalType: 'ShortStay',
+          bookingSource: 'Direct',
+          checkInDate: todayStr,
+          checkOutDate: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0],
+          dailyRate: defaultProp ? defaultProp.defaultDailyRate : 0,
+          monthlyRate: defaultProp ? defaultProp.defaultMonthlyRate : 0,
+          agreedRentalAmount: defaultProp ? defaultProp.defaultDailyRate * 3 : 0,
+          securityDeposit: 0,
+          reservationFee: 0,
+          reservationStatus: 'Confirmed',
+          notes: '',
+        });
+      }
+      setIsAddingNewGuest(false);
+      setError(null);
     }
-    setIsAddingNewGuest(false);
-    setError(null);
-  }, [initialData, isOpen, properties, guests]);
+
+    prevIsOpenRef.current = isOpen;
+    prevInitialDataRef.current = initialData;
+  }, [initialData, isOpen, properties]);
 
   const isFutureCheckIn = formData.checkInDate > todayStr;
 

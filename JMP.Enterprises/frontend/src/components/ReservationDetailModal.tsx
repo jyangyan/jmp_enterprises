@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { X, Building2, User, Calendar, MapPin, Tag, Phone, FileText, Plus, Printer, Eye, AlertOctagon } from 'lucide-react';
+import { X, Building2, User, Calendar, MapPin, Tag, Phone, FileText, Plus, Printer, Eye, AlertOctagon, Zap } from 'lucide-react';
 import { Reservation } from '../types/reservation';
 import { Receipt } from '../types/receipt';
+import { RentalAgreement } from '../types/rentalAgreement';
 import { receiptApi } from '../api/receiptApi';
+import { rentalAgreementApi } from '../api/rentalAgreementApi';
 import { ReceiptModal } from './ReceiptModal';
 import { CheckoutSettlementModal } from './CheckoutSettlementModal';
+import { RentalAgreementModal } from './RentalAgreementModal';
+import { StatementOfAccountModal } from './StatementOfAccountModal';
 
 interface ReservationDetailModalProps {
   isOpen: boolean;
@@ -28,6 +32,13 @@ export const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState<boolean>(false);
   const [creatingQuickReceipt, setCreatingQuickReceipt] = useState<boolean>(false);
 
+  // Rental Agreement State
+  const [agreement, setAgreement] = useState<RentalAgreement | null>(null);
+  const [loadingAgreement, setLoadingAgreement] = useState<boolean>(false);
+  const [generatingAgreement, setGeneratingAgreement] = useState<boolean>(false);
+  const [isAgreementModalOpen, setIsAgreementModalOpen] = useState<boolean>(false);
+  const [isSoaModalOpen, setIsSoaModalOpen] = useState<boolean>(false);
+
   const fetchReceipts = async () => {
     if (!reservation) return;
     setLoadingReceipts(true);
@@ -41,11 +52,41 @@ export const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
     }
   };
 
+  const fetchAgreement = async () => {
+    if (!reservation || reservation.rentalType !== 'LongStay') return;
+    setLoadingAgreement(true);
+    try {
+      const data = await rentalAgreementApi.getByReservationId(reservation.reservationId);
+      setAgreement(data);
+    } catch (err) {
+      console.error('Failed to fetch rental agreement', err);
+    } finally {
+      setLoadingAgreement(false);
+    }
+  };
+
   useEffect(() => {
     if (isOpen && reservation) {
       fetchReceipts();
+      if (reservation.rentalType === 'LongStay') {
+        fetchAgreement();
+      }
     }
   }, [isOpen, reservation]);
+
+  const handleGenerateAgreement = async () => {
+    if (!reservation) return;
+    setGeneratingAgreement(true);
+    try {
+      const newAgreement = await rentalAgreementApi.generateDraft(reservation.reservationId);
+      setAgreement(newAgreement);
+      setIsAgreementModalOpen(true);
+    } catch (err: any) {
+      alert(err.message || 'Failed to generate rental agreement');
+    } finally {
+      setGeneratingAgreement(false);
+    }
+  };
 
   const handleViewReceipt = (receipt: Receipt) => {
     setSelectedReceipt(receipt);
@@ -221,6 +262,84 @@ export const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
               </div>
             </div>
 
+            {/* RENTAL AGREEMENT CONTRACT SECTION (LongStay Only) */}
+            {reservation.rentalType === 'LongStay' && (
+              <div className="card" style={{ padding: '16px', background: '#ffffff', border: '1px solid #cbd5e1' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <div style={{ fontSize: '0.85rem', textTransform: 'uppercase', color: '#0f172a', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <FileText size={16} style={{ color: '#2563eb' }} />
+                    RENTAL AGREEMENT CONTRACT
+                  </div>
+                  {agreement && (
+                    <span style={{
+                      fontSize: '0.72rem',
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      background: agreement.agreementStatus === 'Finalized' ? 'rgba(16, 185, 129, 0.15)' : agreement.agreementStatus === 'Draft' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                      color: agreement.agreementStatus === 'Finalized' ? '#059669' : agreement.agreementStatus === 'Draft' ? '#d97706' : '#dc2626'
+                    }}>
+                      {agreement.agreementStatus}
+                    </span>
+                  )}
+                </div>
+
+                {loadingAgreement ? (
+                  <div style={{ padding: '12px', fontSize: '0.85rem', color: '#64748b', textAlign: 'center' }}>
+                    Loading agreement details...
+                  </div>
+                ) : !agreement ? (
+                  <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a' }}>No Rental Agreement Generated Yet</div>
+                      <div style={{ fontSize: '0.8rem', color: '#64748b' }}>Generate an official long-stay rental contract agreement for {reservation.guestName}.</div>
+                    </div>
+                    <button
+                      className="btn btn-primary btn-sm"
+                      onClick={handleGenerateAgreement}
+                      disabled={generatingAgreement}
+                      style={{ display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}
+                    >
+                      <Plus size={14} />
+                      Generate Rental Agreement
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '12px 16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#0f172a', fontFamily: 'monospace' }}>
+                        {agreement.agreementNumber}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '2px' }}>
+                        Term: {formatDate(agreement.rentalStartDate)} – {formatDate(agreement.rentalEndDate)} ({agreement.numberOfMonths} Mos.)
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => setIsAgreementModalOpen(true)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', background: '#ffffff' }}
+                      >
+                        <Eye size={14} />
+                        View Agreement
+                      </button>
+
+                      <button
+                        className="btn btn-primary btn-sm"
+                        onClick={() => setIsSoaModalOpen(true)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', background: '#2563eb', color: '#ffffff' }}
+                      >
+                        <Zap size={14} />
+                        Monthly Billing (SOA)
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* RECEIPTS SECTION (Requirements Step 9) */}
             <div className="card" style={{ padding: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
@@ -367,6 +486,28 @@ export const ReservationDetailModal: React.FC<ReservationDetailModalProps> = ({
           fetchReceipts();
         }}
       />
+
+      {/* Rental Agreement Contract Modal */}
+      {agreement && (
+        <RentalAgreementModal
+          agreement={agreement}
+          isOpen={isAgreementModalOpen}
+          onClose={() => setIsAgreementModalOpen(false)}
+          onAgreementUpdated={(updated) => {
+            setAgreement(updated);
+          }}
+        />
+      )}
+
+      {/* Monthly Statement of Account (SOA) Modal */}
+      {agreement && (
+        <StatementOfAccountModal
+          isOpen={isSoaModalOpen}
+          onClose={() => setIsSoaModalOpen(false)}
+          rentalAgreement={agreement}
+          reservationId={reservation.reservationId}
+        />
+      )}
     </>
   );
 };

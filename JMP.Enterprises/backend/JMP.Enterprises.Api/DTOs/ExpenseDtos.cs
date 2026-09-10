@@ -7,6 +7,7 @@ public class ExpenseDto
     public int ExpenseId { get; set; }
     public int? PropertyId { get; set; }
     public string? PropertyName { get; set; }
+    public int? ReservationId { get; set; }
     public DateTime ExpenseDate { get; set; }
     public string Category { get; set; } = string.Empty;
     public decimal Amount { get; set; }
@@ -19,6 +20,7 @@ public class ExpenseDto
 public class CreateExpenseDto
 {
     public int? PropertyId { get; set; }
+    public int? ReservationId { get; set; }
     public DateTime ExpenseDate { get; set; } = DateTime.Now;
     public string Category { get; set; } = "Maintenance";
     public decimal Amount { get; set; }
@@ -30,6 +32,7 @@ public class CreateExpenseDto
 public class UpdateExpenseDto
 {
     public int? PropertyId { get; set; }
+    public int? ReservationId { get; set; }
     public DateTime ExpenseDate { get; set; }
     public string Category { get; set; } = "Maintenance";
     public decimal Amount { get; set; }

@@ -7,6 +7,7 @@ import { ReservationsPage } from './pages/ReservationsPage';
 import { PaymentsPage } from './pages/PaymentsPage';
 import { ExpensesPage } from './pages/ExpensesPage';
 import { FinancialsPage } from './pages/FinancialsPage';
+import { ReportsPage } from './pages/ReportsPage';
 import { EnterpriseHomePage } from './pages/EnterpriseHomePage';
 import { BusinessPlaceholderPage } from './pages/BusinessPlaceholderPage';
 import { UserAccessPage } from './pages/UserAccessPage';
@@ -574,6 +575,7 @@ export const App: React.FC = () => {
             onOpenEditModal={handleOpenEditReservation}
             onOpenDetailModal={handleOpenDetailReservation}
             onCancelReservation={handleCancelReservation}
+            onRefreshData={fetchReservations}
           />
         ) : activeRentalTab === 'payments' ? (
           <PaymentsPage
@@ -591,8 +593,10 @@ export const App: React.FC = () => {
             onOpenEditModal={handleOpenEditExpense}
             onDeleteExpense={handleDeleteExpense}
           />
-        ) : (
+        ) : activeRentalTab === 'financials' ? (
           <FinancialsPage properties={properties} />
+        ) : (
+          <ReportsPage properties={properties} />
         )
       ) : (
         <EnterpriseHomePage

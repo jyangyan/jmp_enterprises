@@ -4,6 +4,7 @@ using JMP.Enterprises.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace JMP.Enterprises.Api.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260910065702_AddRentalAgreements")]
+    partial class AddRentalAgreements
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -701,107 +704,6 @@ namespace JMP.Enterprises.Api.Migrations
                     b.ToTable("Reservations");
                 });
 
-            modelBuilder.Entity("JMP.Enterprises.Api.Models.StatementOfAccount", b =>
-                {
-                    b.Property<int>("StatementOfAccountId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("StatementOfAccountId"));
-
-                    b.Property<decimal>("AdditionalCharges")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("AdditionalChargesDescription")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<decimal>("AmountPaid")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("BalanceRemaining")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("BillingPeriodEnd")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("BillingPeriodStart")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("DueDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal>("ElectricityAmount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("ElectricityConsumptionKwh")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("ElectricityRatePerKwh")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("InternetAmount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("IssueDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal>("MonthlyRentAmount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<decimal>("PresentElectricityReading")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("PreviousBalance")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("PreviousElectricityReading")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("RentalAgreementId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ReservationId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("SoaNumber")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
-                    b.Property<decimal>("TotalAmountDue")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal>("WaterAmount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.HasKey("StatementOfAccountId");
-
-                    b.HasIndex("RentalAgreementId");
-
-                    b.HasIndex("ReservationId");
-
-                    b.HasIndex("SoaNumber")
-                        .IsUnique();
-
-                    b.ToTable("StatementsOfAccount");
-                });
-
             modelBuilder.Entity("JMP.Enterprises.Api.Models.UserBusinessAccess", b =>
                 {
                     b.Property<int>("UserBusinessAccessId")
@@ -925,25 +827,6 @@ namespace JMP.Enterprises.Api.Migrations
                     b.Navigation("Guest");
 
                     b.Navigation("Property");
-                });
-
-            modelBuilder.Entity("JMP.Enterprises.Api.Models.StatementOfAccount", b =>
-                {
-                    b.HasOne("JMP.Enterprises.Api.Models.RentalAgreement", "RentalAgreement")
-                        .WithMany()
-                        .HasForeignKey("RentalAgreementId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("JMP.Enterprises.Api.Models.Reservation", "Reservation")
-                        .WithMany()
-                        .HasForeignKey("ReservationId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("RentalAgreement");
-
-                    b.Navigation("Reservation");
                 });
 
             modelBuilder.Entity("JMP.Enterprises.Api.Models.UserBusinessAccess", b =>

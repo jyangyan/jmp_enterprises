@@ -80,6 +80,7 @@ public class ExpenseService : IExpenseService
         var expense = new Expense
         {
             PropertyId = dto.PropertyId,
+            ReservationId = dto.ReservationId,
             ExpenseDate = dto.ExpenseDate,
             Category = dto.Category,
             Amount = dto.Amount,
@@ -110,6 +111,7 @@ public class ExpenseService : IExpenseService
         }
 
         expense.PropertyId = dto.PropertyId;
+        expense.ReservationId = dto.ReservationId;
         expense.ExpenseDate = dto.ExpenseDate;
         expense.Category = dto.Category;
         expense.Amount = dto.Amount;
@@ -185,6 +187,7 @@ public class ExpenseService : IExpenseService
             ExpenseId = expense.ExpenseId,
             PropertyId = expense.PropertyId,
             PropertyName = expense.Property != null ? expense.Property.PropertyName : "General / Overhead",
+            ReservationId = expense.ReservationId,
             ExpenseDate = expense.ExpenseDate,
             Category = expense.Category,
             Amount = expense.Amount,

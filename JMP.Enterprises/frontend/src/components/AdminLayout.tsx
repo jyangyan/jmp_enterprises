@@ -19,7 +19,7 @@ import {
 import { Business } from '../types/business';
 
 export type ActiveModule = 'home' | 'rental' | 'laundry' | 'print' | 'minimart' | 'user-access';
-export type ActiveRentalTab = 'dashboard' | 'properties' | 'guests' | 'reservations' | 'payments' | 'expenses' | 'financials';
+export type ActiveRentalTab = 'dashboard' | 'properties' | 'guests' | 'reservations' | 'payments' | 'expenses' | 'financials' | 'reports';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -59,16 +59,78 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
     <div className="app-layout">
       {/* Sidebar Navigation */}
       <aside className="sidebar">
-        <div className="sidebar-header" style={{ padding: '20px 16px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <div className="brand-logo-wrapper" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', width: '100%' }} onClick={() => onModuleChange('home')}>
-            <img 
-              src="/logo_white.png" 
-              alt="JMP Enterprises" 
-              style={{ height: '70px', maxHeight: '75px', width: 'auto', objectFit: 'contain' }}
-              onError={(e) => {
-                (e.target as HTMLElement).style.display = 'none';
-              }}
-            />
+        <div className="sidebar-header" style={{ padding: '16px 14px', borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}>
+          <div 
+            className="brand-logo-wrapper" 
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '12px', 
+              cursor: 'pointer', 
+              width: '100%',
+              userSelect: 'none',
+              padding: '8px 10px',
+              borderRadius: '10px',
+              background: 'rgba(255, 255, 255, 0.03)',
+              border: '1px solid rgba(255, 255, 255, 0.06)'
+            }} 
+            onClick={() => onModuleChange('home')}
+          >
+            {/* Minimalist Monogram Icon */}
+            <div style={{
+              width: '38px',
+              height: '38px',
+              borderRadius: '9px',
+              background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#ffffff',
+              fontWeight: 900,
+              fontSize: '0.95rem',
+              letterSpacing: '-0.02em',
+              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.35)',
+              flexShrink: 0
+            }}>
+              JMP
+            </div>
+
+            {/* Text Title & Subtitle */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '5px' }}>
+                <span style={{ 
+                  fontSize: '1rem', 
+                  fontWeight: 800, 
+                  color: '#ffffff', 
+                  letterSpacing: '0.04em',
+                  fontFamily: "'Inter', -apple-system, sans-serif"
+                }}>
+                  JMP
+                </span>
+                <span style={{ 
+                  fontSize: '0.7rem', 
+                  fontWeight: 600, 
+                  color: '#94a3b8', 
+                  letterSpacing: '0.08em',
+                  fontFamily: "'Inter', -apple-system, sans-serif",
+                  textTransform: 'uppercase'
+                }}>
+                  ENTERPRISES
+                </span>
+              </div>
+              <span style={{
+                fontSize: '0.63rem',
+                fontWeight: 600,
+                color: '#34d399',
+                letterSpacing: '0.04em',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px'
+              }}>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }}></span>
+                Multi-Business Hub
+              </span>
+            </div>
           </div>
         </div>
 
@@ -186,7 +248,15 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                 onClick={() => onRentalTabChange('financials')}
               >
                 <BarChart3 size={18} />
-                <span>Profitability & Reports</span>
+                <span>Financial Summary</span>
+              </button>
+
+              <button 
+                className={`nav-item ${activeRentalTab === 'reports' ? 'active' : ''}`}
+                onClick={() => onRentalTabChange('reports')}
+              >
+                <Sparkles size={18} />
+                <span>Reports & Analytics</span>
               </button>
             </div>
           )}

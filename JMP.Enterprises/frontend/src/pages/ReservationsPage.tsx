@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { Plus, Eye, Edit2, XCircle, CalendarDays, Filter, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Eye, Edit2, XCircle, CalendarDays, Filter, ArrowUpDown, ArrowUp, ArrowDown, LogOut, LayoutList, Calendar as CalendarIcon } from 'lucide-react';
 import { Reservation } from '../types/reservation';
 import { Property } from '../types/property';
 import { AvailabilityChecker } from '../components/AvailabilityChecker';
+import { CheckoutSettlementModal } from '../components/CheckoutSettlementModal';
+import { ReservationCalendarView } from '../components/ReservationCalendarView';
 
 interface ReservationsPageProps {
   reservations: Reservation[];
@@ -11,10 +13,12 @@ interface ReservationsPageProps {
   onOpenEditModal: (reservation: Reservation) => void;
   onOpenDetailModal: (reservation: Reservation) => void;
   onCancelReservation: (reservation: Reservation) => void;
+  onRefreshData?: () => void;
 }
 
-type SortField = 'checkInDate' | 'checkOutDate' | 'agreedRentalAmount' | 'guestName' | 'propertyName';
+type SortField = 'checkInDate' | 'checkOutDate' | 'createdDate' | 'agreedRentalAmount' | 'guestName' | 'propertyName';
 type SortOrder = 'asc' | 'desc';
+type ViewMode = 'table' | 'calendar';
 
 export const ReservationsPage: React.FC<ReservationsPageProps> = ({
   reservations,
@@ -23,10 +27,13 @@ export const ReservationsPage: React.FC<ReservationsPageProps> = ({
   onOpenEditModal,
   onOpenDetailModal,
   onCancelReservation,
+  onRefreshData
 }) => {
+  const [viewMode, setViewMode] = useState<ViewMode>('calendar');
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>('All');
   const [selectedRentalType, setSelectedRentalType] = useState<string>('All');
   const [selectedStatus, setSelectedStatus] = useState<string>('All');
+  const [selectedForCheckout, setSelectedForCheckout] = useState<Reservation | null>(null);
 
   // Sorting state
   const [sortField, setSortField] = useState<SortField>('checkInDate');
@@ -57,6 +64,8 @@ export const ReservationsPage: React.FC<ReservationsPageProps> = ({
       comparison = new Date(a.checkInDate).getTime() - new Date(b.checkInDate).getTime();
     } else if (sortField === 'checkOutDate') {
       comparison = new Date(a.checkOutDate).getTime() - new Date(b.checkOutDate).getTime();
+    } else if (sortField === 'createdDate') {
+      comparison = new Date(a.createdDate || 0).getTime() - new Date(b.createdDate || 0).getTime();
     } else if (sortField === 'agreedRentalAmount') {
       comparison = a.agreedRentalAmount - b.agreedRentalAmount;
     } else if (sortField === 'guestName') {
@@ -87,8 +96,74 @@ export const ReservationsPage: React.FC<ReservationsPageProps> = ({
 
   return (
     <div>
+      {/* Top Header & View Mode Switcher */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '20px',
+        flexWrap: 'wrap',
+        gap: '12px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#e2e8f0', padding: '4px', borderRadius: '10px' }}>
+          <button
+            onClick={() => setViewMode('calendar')}
+            style={{
+              background: viewMode === 'calendar' ? '#0f172a' : 'transparent',
+              color: viewMode === 'calendar' ? '#ffffff' : '#475569',
+              border: 'none',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              fontWeight: 700,
+              fontSize: '0.85rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <CalendarIcon size={16} />
+            Calendar View (Crossed-Out Schedule)
+          </button>
+          <button
+            onClick={() => setViewMode('table')}
+            style={{
+              background: viewMode === 'table' ? '#0f172a' : 'transparent',
+              color: viewMode === 'table' ? '#ffffff' : '#475569',
+              border: 'none',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              fontWeight: 700,
+              fontSize: '0.85rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <LayoutList size={16} />
+            Table List View
+          </button>
+        </div>
+
+        <button className="btn btn-primary" onClick={onOpenCreateModal}>
+          <Plus size={18} /> Create New Reservation
+        </button>
+      </div>
+
       {/* Property Availability Checker Section */}
       <AvailabilityChecker />
+
+      {/* Render Calendar View or Table View */}
+      {viewMode === 'calendar' && (
+        <ReservationCalendarView
+          reservations={reservations}
+          properties={properties}
+          onSelectReservation={onOpenDetailModal}
+        />
+      )}
 
       {/* Toolbar Controls */}
       <div className="toolbar">
@@ -147,6 +222,8 @@ export const ReservationsPage: React.FC<ReservationsPageProps> = ({
               setSortOrder(parts[1] as SortOrder);
             }}
           >
+            <option value="createdDate-desc">Created Date (Newest First)</option>
+            <option value="createdDate-asc">Created Date (Oldest First)</option>
             <option value="checkInDate-asc">Check-In Date (Earliest First)</option>
             <option value="checkInDate-desc">Check-In Date (Latest First)</option>
             <option value="checkOutDate-asc">Check-Out Date (Earliest First)</option>
@@ -198,6 +275,16 @@ export const ReservationsPage: React.FC<ReservationsPageProps> = ({
                   </th>
 
                   <th style={{ padding: '12px 16px' }}>Rental Type</th>
+
+                  <th
+                    style={{ padding: '12px 16px', cursor: 'pointer', userSelect: 'none' }}
+                    onClick={() => handleHeaderClick('createdDate')}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      Created Date
+                      {sortField === 'createdDate' ? (sortOrder === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />) : <ArrowUpDown size={12} style={{ opacity: 0.4 }} />}
+                    </div>
+                  </th>
 
                   <th
                     style={{ padding: '12px 16px', cursor: 'pointer', userSelect: 'none' }}
@@ -273,6 +360,10 @@ export const ReservationsPage: React.FC<ReservationsPageProps> = ({
                         </span>
                       </td>
 
+                      <td style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontSize: '0.825rem', whiteSpace: 'nowrap' }}>
+                        {formatDate(r.createdDate)}
+                      </td>
+
                       <td style={{ padding: '12px 16px', fontWeight: 600 }}>
                         {formatDate(r.checkInDate)}
                       </td>
@@ -302,6 +393,28 @@ export const ReservationsPage: React.FC<ReservationsPageProps> = ({
 
                       <td style={{ padding: '12px 16px', textAlign: 'right' }}>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
+                          {r.reservationStatus === 'CheckedIn' && (
+                            <button
+                              className="btn btn-sm"
+                              style={{
+                                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                color: '#ffffff',
+                                border: 'none',
+                                fontWeight: 700,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                boxShadow: '0 2px 6px rgba(16, 185, 129, 0.25)',
+                                whiteSpace: 'nowrap'
+                              }}
+                              onClick={() => setSelectedForCheckout(r)}
+                              title="Perform Checkout Settlement"
+                            >
+                              <LogOut size={14} />
+                              Check-Out
+                            </button>
+                          )}
+
                           <button
                             className="btn btn-secondary btn-sm"
                             onClick={() => onOpenDetailModal(r)}
@@ -342,6 +455,20 @@ export const ReservationsPage: React.FC<ReservationsPageProps> = ({
           </div>
         )}
       </div>
+
+      {/* Checkout Settlement Modal */}
+      {selectedForCheckout && (
+        <CheckoutSettlementModal
+          reservation={selectedForCheckout}
+          isOpen={!!selectedForCheckout}
+          onClose={() => setSelectedForCheckout(null)}
+          onReceiptGenerated={(receipt) => {
+            setSelectedForCheckout(null);
+            window.dispatchEvent(new CustomEvent('open-receipt-modal', { detail: receipt }));
+            if (onRefreshData) onRefreshData();
+          }}
+        />
+      )}
     </div>
   );
 };

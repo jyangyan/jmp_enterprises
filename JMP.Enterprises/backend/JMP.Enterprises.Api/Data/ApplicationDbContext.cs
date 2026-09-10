@@ -22,6 +22,9 @@ public class ApplicationDbContext : DbContext
     public DbSet<Business> Businesses { get; set; }
     public DbSet<UserBusinessAccess> UserBusinessAccesses { get; set; }
 
+    public DbSet<RentalAgreement> RentalAgreements { get; set; }
+    public DbSet<StatementOfAccount> StatementsOfAccount { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -318,6 +321,11 @@ public class ApplicationDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.PropertyId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Reservation)
+                .WithMany()
+                .HasForeignKey(e => e.ReservationId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         // ===== Business Entity Configuration & Seeding =====
@@ -417,6 +425,86 @@ public class ApplicationDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(u => u.BusinessId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ===== RentalAgreement Entity Configuration =====
+        modelBuilder.Entity<RentalAgreement>(entity =>
+        {
+            entity.HasKey(a => a.RentalAgreementId);
+
+            entity.Property(a => a.AgreementNumber)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.HasIndex(a => a.AgreementNumber)
+                .IsUnique();
+
+            entity.Property(a => a.MonthlyRent).HasColumnType("decimal(18,2)");
+            entity.Property(a => a.ReservationFee).HasColumnType("decimal(18,2)");
+            entity.Property(a => a.SecurityDeposit).HasColumnType("decimal(18,2)");
+            entity.Property(a => a.AdvancePayment).HasColumnType("decimal(18,2)");
+
+            entity.Property(a => a.ElectricityResponsibility).IsRequired().HasMaxLength(50);
+            entity.Property(a => a.WaterResponsibility).IsRequired().HasMaxLength(50);
+            entity.Property(a => a.InternetResponsibility).IsRequired().HasMaxLength(50);
+
+            entity.Property(a => a.AgreementStatus).IsRequired().HasMaxLength(30);
+
+            entity.Property(a => a.TenantName).IsRequired().HasMaxLength(200);
+            entity.Property(a => a.TenantCompanyName).HasMaxLength(200);
+            entity.Property(a => a.TenantMobile).HasMaxLength(50);
+            entity.Property(a => a.PropertyName).IsRequired().HasMaxLength(100);
+            entity.Property(a => a.PropertyCode).IsRequired().HasMaxLength(20);
+
+            entity.Property(a => a.PetDescription).HasMaxLength(250);
+            entity.Property(a => a.AdditionalTerms).HasMaxLength(2000);
+            entity.Property(a => a.EarlyTerminationTerms).HasMaxLength(1000);
+
+            entity.HasOne(a => a.Reservation)
+                .WithMany()
+                .HasForeignKey(a => a.ReservationId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ===== StatementOfAccount Entity Configuration =====
+        modelBuilder.Entity<StatementOfAccount>(entity =>
+        {
+            entity.HasKey(s => s.StatementOfAccountId);
+
+            entity.Property(s => s.SoaNumber)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.HasIndex(s => s.SoaNumber)
+                .IsUnique();
+
+            entity.Property(s => s.MonthlyRentAmount).HasColumnType("decimal(18,2)");
+            entity.Property(s => s.PreviousElectricityReading).HasColumnType("decimal(18,2)");
+            entity.Property(s => s.PresentElectricityReading).HasColumnType("decimal(18,2)");
+            entity.Property(s => s.ElectricityConsumptionKwh).HasColumnType("decimal(18,2)");
+            entity.Property(s => s.ElectricityRatePerKwh).HasColumnType("decimal(18,2)");
+            entity.Property(s => s.ElectricityAmount).HasColumnType("decimal(18,2)");
+            entity.Property(s => s.WaterAmount).HasColumnType("decimal(18,2)");
+            entity.Property(s => s.InternetAmount).HasColumnType("decimal(18,2)");
+            entity.Property(s => s.AdditionalCharges).HasColumnType("decimal(18,2)");
+            entity.Property(s => s.PreviousBalance).HasColumnType("decimal(18,2)");
+            entity.Property(s => s.TotalAmountDue).HasColumnType("decimal(18,2)");
+            entity.Property(s => s.AmountPaid).HasColumnType("decimal(18,2)");
+            entity.Property(s => s.BalanceRemaining).HasColumnType("decimal(18,2)");
+
+            entity.Property(s => s.Status).IsRequired().HasMaxLength(30);
+            entity.Property(s => s.AdditionalChargesDescription).HasMaxLength(500);
+            entity.Property(s => s.Notes).HasMaxLength(1000);
+
+            entity.HasOne(s => s.Reservation)
+                .WithMany()
+                .HasForeignKey(s => s.ReservationId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(s => s.RentalAgreement)
+                .WithMany()
+                .HasForeignKey(s => s.RentalAgreementId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

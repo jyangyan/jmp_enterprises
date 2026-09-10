@@ -13,6 +13,9 @@ public class Expense
     public int? PropertyId { get; set; }
     public Property? Property { get; set; }
 
+    public int? ReservationId { get; set; }
+    public Reservation? Reservation { get; set; }
+
     public DateTime ExpenseDate { get; set; } = DateTime.Now;
 
     /// <summary>
